@@ -15,8 +15,8 @@ let package = Package(
             targets: ["ThemeKit"]
         ),
         .plugin(
-            name: "ThemeKitPlugin",
-            targets: ["ThemeKitPlugin"]
+            name: "Generate Theme Files",
+            targets: ["Generate Theme Files"]
         ),
     ],
     targets: [
@@ -31,12 +31,13 @@ let package = Package(
             dependencies: ["ThemeKitGenerator"]
         ),
         .plugin(
-            name: "ThemeKitPlugin",
+            name: "Generate Theme Files",
             capability: .command(
                 intent: .custom(verb: "generate-theme", description: "Generate Theme Files"),
                 permissions: [.writeToPackageDirectory(reason: "Generates Swift theme files from theme.json")]
             ),
-            dependencies: ["ThemeKitGeneratorCLI"]
+            dependencies: ["ThemeKitGeneratorCLI"],
+            path: "Plugins/ThemeKitPlugin"
         ),
         .testTarget(
             name: "ThemeKitTests",

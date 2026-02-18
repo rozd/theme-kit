@@ -1,8 +1,8 @@
-public struct CategoryStructGenerator: Sendable {
+nonisolated public struct CategoryStructGenerator: Sendable {
 
-    public init() {}
+    nonisolated public init() {}
 
-    public func generate(category: ThemeCategory, tokens: [ThemeToken]) -> GeneratedFile {
+    nonisolated public func generate(category: ThemeCategory, tokens: [ThemeToken]) -> GeneratedFile {
         let properties = tokens.map { token in
             "    public let \(token.name): ThemeAdaptiveStyle<\(category.styleType)>"
         }.joined(separator: "\n")
@@ -21,10 +21,10 @@ public struct CategoryStructGenerator: Sendable {
         import SwiftUI
         import ThemeKit
 
-        public struct \(category.structName): Sendable, Codable, Equatable {
+        nonisolated public struct \(category.structName): Sendable, Codable, Equatable {
         \(properties)
 
-            public init(
+            nonisolated public init(
         \(initParams)
             ) {
         \(initAssignments)

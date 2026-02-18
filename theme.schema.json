@@ -2,25 +2,45 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/rozd/theme-kit/theme.schema.json",
   "title": "ThemeKit Configuration",
-  "description": "Defines style tokens for ThemeKit code generation.",
+  "description": "Defines style tokens and generation settings for ThemeKit code generation.",
   "type": "object",
   "properties": {
-    "colors": {
-      "description": "Color style tokens (resolved as ThemeAdaptiveStyle<Color>).",
-      "type": "array",
-      "items": { "$ref": "#/$defs/tokenEntry" }
+    "styles": {
+      "description": "Style token definitions for colors, gradients, and shadows.",
+      "type": "object",
+      "properties": {
+        "colors": {
+          "description": "Color style tokens (resolved as ThemeAdaptiveStyle<Color>).",
+          "type": "array",
+          "items": { "$ref": "#/$defs/tokenEntry" }
+        },
+        "gradients": {
+          "description": "Gradient style tokens (resolved as ThemeAdaptiveStyle<Gradient>).",
+          "type": "array",
+          "items": { "$ref": "#/$defs/tokenEntry" }
+        },
+        "shadows": {
+          "description": "Shadow style tokens (resolved as ThemeAdaptiveStyle<Shadow>).",
+          "type": "array",
+          "items": { "$ref": "#/$defs/tokenEntry" }
+        }
+      },
+      "additionalProperties": false
     },
-    "gradients": {
-      "description": "Gradient style tokens (resolved as ThemeAdaptiveStyle<Gradient>).",
-      "type": "array",
-      "items": { "$ref": "#/$defs/tokenEntry" }
-    },
-    "shadows": {
-      "description": "Shadow style tokens (resolved as ThemeAdaptiveStyle<Shadow>).",
-      "type": "array",
-      "items": { "$ref": "#/$defs/tokenEntry" }
+    "config": {
+      "description": "Generation configuration settings.",
+      "type": "object",
+      "properties": {
+        "outputPath": {
+          "type": "string",
+          "description": "Relative path from the generation root where generated files should be written (e.g., 'UI/Theme'). Defaults to '.' if not specified."
+        }
+      },
+      "required": ["outputPath"],
+      "additionalProperties": false
     }
   },
+  "required": ["styles"],
   "additionalProperties": false,
   "$defs": {
     "tokenEntry": {

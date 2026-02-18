@@ -2,7 +2,7 @@ import SwiftUI
 
 extension Color {
 
-    init(hex: Int) {
+    nonisolated init(hex: Int) {
         self.init(
             red: Double((hex >> 16) & 0xFF) / 255.0,
             green: Double((hex >> 8) & 0xFF) / 255.0,
@@ -10,14 +10,14 @@ extension Color {
         )
     }
 
-    init(hex string: String) {
+    nonisolated init(hex string: String) {
         let hex = string.hasPrefix("#") ? String(string.dropFirst()) : string
         var value: UInt64 = 0
         Scanner(string: hex).scanHexInt64(&value)
         self.init(hex: Int(value))
     }
 
-    var hexString: String {
+    nonisolated var hexString: String {
         get throws {
 #if canImport(UIKit)
             let color = UIColor(self)
@@ -43,7 +43,7 @@ extension Color {
 }
 
 extension Color {
-    enum HexCodingError: Error {
+    nonisolated enum HexCodingError: Error {
         case rgbExtractionFailed
     }
 }

@@ -1,8 +1,8 @@
-public struct ThemeStructGenerator: Sendable {
+nonisolated public struct ThemeStructGenerator: Sendable {
 
-    public init() {}
+    nonisolated public init() {}
 
-    public func generate(from config: ThemeConfig) -> GeneratedFile {
+    nonisolated public func generate(from config: ThemeConfig) -> GeneratedFile {
         let categories = config.categories
 
         let properties = categories.map { category in
@@ -23,10 +23,10 @@ public struct ThemeStructGenerator: Sendable {
         import SwiftUI
         import ThemeKit
 
-        public struct Theme: Sendable, Codable, Equatable {
+        nonisolated public struct Theme: Sendable, Codable, Equatable {
         \(properties)
 
-            public init(
+            nonisolated public init(
         \(initParams)
             ) {
         \(initAssignments)

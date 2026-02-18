@@ -34,27 +34,30 @@ func run() throws {
     }
 
     let data = try Data(contentsOf: configURL)
-    let files = try ThemeFileGenerator().generate(fromJSON: data)
+    let result = try ThemeFileGenerator().generate(fromJSON: data)
 
-    let outputURL = URL(fileURLWithPath: outputPath)
-    try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
+    // Combine base output path with config's relative path
+    let baseURL = URL(fileURLWithPath: outputPath)
+    let finalOutputURL = baseURL.appendingPathComponent(result.outputPath)
 
-    for file in files {
-        let fileURL = outputURL.appendingPathComponent(file.name)
+    try FileManager.default.createDirectory(at: finalOutputURL, withIntermediateDirectories: true)
+
+    for file in result.files {
+        let fileURL = finalOutputURL.appendingPathComponent(file.name)
         try file.content.write(to: fileURL, atomically: true, encoding: .utf8)
     }
 
-    print("ThemeKit: Generated \(files.count) files in \(outputPath):")
-    for file in files {
+    print("ThemeKit: Generated \(result.files.count) files in \(finalOutputURL.path):")
+    for file in result.files {
         print("  - \(file.name)")
     }
 }
 
-enum GeneratorError: Error, CustomStringConvertible {
+nonisolated enum GeneratorError: Error, CustomStringConvertible {
     case missingArgument(String)
     case configNotFound(String)
 
-    var description: String {
+    nonisolated var description: String {
         switch self {
         case .missingArgument(let flag):
             "Missing value for \(flag)"

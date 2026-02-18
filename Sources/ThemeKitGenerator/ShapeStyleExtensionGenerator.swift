@@ -1,8 +1,8 @@
-public struct ShapeStyleExtensionGenerator: Sendable {
+nonisolated public struct ShapeStyleExtensionGenerator: Sendable {
 
-    public init() {}
+    nonisolated public init() {}
 
-    public func generate(category: ThemeCategory, tokens: [ThemeToken]) -> GeneratedFile {
+    nonisolated public func generate(category: ThemeCategory, tokens: [ThemeToken]) -> GeneratedFile {
         let properties = tokens.map { token in
             "    public static var \(token.style): Self { .init(keyPath: \\.\(category.propertyName).\(token.name)) }"
         }.joined(separator: "\n")

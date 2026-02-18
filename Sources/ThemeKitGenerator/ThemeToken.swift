@@ -1,17 +1,17 @@
 import Foundation
 
-public struct ThemeToken: Sendable, Equatable {
+nonisolated public struct ThemeToken: Sendable, Equatable {
     public let name: String
     public let style: String
 
-    public init(name: String, style: String) {
+    nonisolated public init(name: String, style: String) {
         self.name = name
         self.style = style
     }
 }
 
 extension ThemeToken: Decodable {
-    public init(from decoder: Decoder) throws {
+    nonisolated public init(from decoder: Decoder) throws {
         if let singleValue = try? decoder.singleValueContainer(),
            let string = try? singleValue.decode(String.self) {
             self.name = string
@@ -25,7 +25,7 @@ extension ThemeToken: Decodable {
 }
 
 extension ThemeToken: Encodable {
-    public func encode(to encoder: Encoder) throws {
+    nonisolated public func encode(to encoder: Encoder) throws {
         if name == style {
             var container = encoder.singleValueContainer()
             try container.encode(name)
@@ -38,7 +38,7 @@ extension ThemeToken: Encodable {
 }
 
 private extension ThemeToken {
-    enum CodingKeys: String, CodingKey {
+    nonisolated enum CodingKeys: String, CodingKey {
         case name, style
     }
 }

@@ -1,6 +1,6 @@
 import SwiftUI
 
-public enum Shadow: Sendable, Codable {
+nonisolated public enum Shadow: Sendable, Codable, Equatable {
     case none
     case drop(color: Color? = nil, radius: CGFloat, x: CGFloat = 0.0, y: CGFloat = 0.0)
     case inner(color: Color? = nil, radius: CGFloat, x: CGFloat = 0.0, y: CGFloat = 0.0)
@@ -8,7 +8,7 @@ public enum Shadow: Sendable, Codable {
 
 public extension Shadow {
 
-    var shadowStyle: ShadowStyle? {
+    nonisolated var shadowStyle: ShadowStyle? {
         switch self {
         case .none:
             return nil
@@ -33,7 +33,7 @@ public extension Shadow {
 
 extension Shadow: ShapeStyle {
 
-    public func resolve(in environment: EnvironmentValues) -> some ShapeStyle {
+    nonisolated public func resolve(in environment: EnvironmentValues) -> some ShapeStyle {
         guard let style = shadowStyle else {
             return AnyShapeStyle(.clear)
         }

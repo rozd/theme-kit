@@ -1,9 +1,9 @@
-public enum ThemeCategory: CaseIterable, Sendable {
+nonisolated public enum ThemeCategory: CaseIterable, Sendable {
     case colors
     case gradients
     case shadows
 
-    public var structName: String {
+    nonisolated public var structName: String {
         switch self {
         case .colors: "ThemeColors"
         case .gradients: "ThemeGradients"
@@ -11,7 +11,7 @@ public enum ThemeCategory: CaseIterable, Sendable {
         }
     }
 
-    public var styleType: String {
+    nonisolated public var styleType: String {
         switch self {
         case .colors: "Color"
         case .gradients: "Gradient"
@@ -19,7 +19,7 @@ public enum ThemeCategory: CaseIterable, Sendable {
         }
     }
 
-    public var propertyName: String {
+    nonisolated public var propertyName: String {
         switch self {
         case .colors: "colors"
         case .gradients: "gradients"
@@ -27,7 +27,7 @@ public enum ThemeCategory: CaseIterable, Sendable {
         }
     }
 
-    public func tokens(from config: ThemeConfig) -> [ThemeToken] {
+    nonisolated public func tokens(from config: ThemeConfig) -> [ThemeToken] {
         switch self {
         case .colors: config.colors ?? []
         case .gradients: config.gradients ?? []

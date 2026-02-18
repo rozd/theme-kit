@@ -1,8 +1,8 @@
-public struct CopyWithGenerator: Sendable {
+nonisolated public struct CopyWithGenerator: Sendable {
 
-    public init() {}
+    nonisolated public init() {}
 
-    public func generateForTheme(config: ThemeConfig) -> GeneratedFile {
+    nonisolated public func generateForTheme(config: ThemeConfig) -> GeneratedFile {
         let categories = config.categories
 
         let params = categories.map { category in
@@ -20,7 +20,7 @@ public struct CopyWithGenerator: Sendable {
         import ThemeKit
 
         extension Theme {
-            public func copyWith(
+            nonisolated public func copyWith(
         \(params)
             ) -> Theme {
                 Theme(
@@ -33,7 +33,7 @@ public struct CopyWithGenerator: Sendable {
         return GeneratedFile(name: "Theme+CopyWith.swift", content: content)
     }
 
-    public func generateForCategory(category: ThemeCategory, tokens: [ThemeToken]) -> GeneratedFile {
+    nonisolated public func generateForCategory(category: ThemeCategory, tokens: [ThemeToken]) -> GeneratedFile {
         let params = tokens.map { token in
             "        \(token.name): ThemeAdaptiveStyle<\(category.styleType)>? = nil"
         }.joined(separator: ",\n")
@@ -49,7 +49,7 @@ public struct CopyWithGenerator: Sendable {
         import ThemeKit
 
         extension \(category.structName) {
-            public func copyWith(
+            nonisolated public func copyWith(
         \(params)
             ) -> \(category.structName) {
                 \(category.structName)(

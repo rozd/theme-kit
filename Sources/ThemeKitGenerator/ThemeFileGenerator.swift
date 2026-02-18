@@ -1,10 +1,10 @@
 import Foundation
 
-public struct ThemeFileGenerator: Sendable {
+nonisolated public struct ThemeFileGenerator: Sendable {
 
-    public init() {}
+    nonisolated public init() {}
 
-    public func generate(from config: ThemeConfig) -> [GeneratedFile] {
+    nonisolated public func generate(from config: ThemeConfig) -> [GeneratedFile] {
         var files: [GeneratedFile] = []
 
         // Static files (same regardless of config)
@@ -26,11 +26,15 @@ public struct ThemeFileGenerator: Sendable {
             files.append(ShapeStyleExtensionGenerator().generate(category: category, tokens: tokens))
         }
 
+        // Defaults scaffold (editable by app dev)
+        files.append(DefaultsGenerator().generate(from: config))
+
         return files
     }
 
-    public func generate(fromJSON data: Data) throws -> [GeneratedFile] {
-        let config = try JSONDecoder().decode(ThemeConfig.self, from: data)
-        return generate(from: config)
+    nonisolated public func generate(fromJSON data: Data) throws -> (files: [GeneratedFile], outputPath: String) {
+        let themeFile = try JSONDecoder().decode(ThemeFile.self, from: data)
+        let files = generate(from: themeFile.styles)
+        return (files, themeFile.resolvedOutputPath)
     }
 }
