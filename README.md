@@ -1,5 +1,5 @@
 # ThemeKit
-[![Release](https://img.shields.io/github/v/release/rozd/theme-kit)](https://github.com/rozd/theme-kit/passage/releases)
+[![Release](https://img.shields.io/github/v/release/rozd/theme-kit)](https://github.com/rozd/theme-kit/releases)
 [![Swift 6.2](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/github/license/rozd/theme-kit)](LICENSE)
 [![codecov](https://codecov.io/gh/rozd/theme-kit/branch/main/graph/badge.svg)](https://codecov.io/gh/rozd/theme-kit)
