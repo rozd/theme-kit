@@ -28,6 +28,8 @@ swift package plugin <command-name>  # Run the command plugin locally
 Sources/
   ThemeKit/              — Core types (library, what app devs import)
   ThemeKitGenerator/     — Generation logic (library, testable)
+  ThemeKitGeneratorCLI/  — CLI executable wrapping the generator (invoked by plugin)
+Plugins/
   ThemeKitPlugin/        — Thin command plugin entry point
 Tests/
   ThemeKitTests/         — Core type tests (with stub generated types)
@@ -71,7 +73,7 @@ JSON file (`theme.json`) with a JSON Schema at `theme.schema.json` in the repo r
 
 Only categories present in config are included in generated `Theme` struct.
 
-The config model (`TokenEntry`) is a struct with `name` and `style` properties and custom `Codable` — strings decode to both fields equal, objects require both keys. Encoding round-trips: equal name/style encodes as string.
+The config model (`ThemeToken`) is a struct with `name` and `style` properties and custom `Codable` — strings decode to both fields equal, objects require both keys. Encoding round-trips: equal name/style encodes as string.
 
 ## Key Patterns
 

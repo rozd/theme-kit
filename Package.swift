@@ -10,21 +10,41 @@ let package = Package(
         .macOS(.v15),
     ],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
             name: "ThemeKit",
             targets: ["ThemeKit"]
         ),
+        .plugin(
+            name: "ThemeKitPlugin",
+            targets: ["ThemeKitPlugin"]
+        ),
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "ThemeKit"
+        ),
+        .target(
+            name: "ThemeKitGenerator"
+        ),
+        .executableTarget(
+            name: "ThemeKitGeneratorCLI",
+            dependencies: ["ThemeKitGenerator"]
+        ),
+        .plugin(
+            name: "ThemeKitPlugin",
+            capability: .command(
+                intent: .custom(verb: "generate-theme", description: "Generate Theme Files"),
+                permissions: [.writeToPackageDirectory(reason: "Generates Swift theme files from theme.json")]
+            ),
+            dependencies: ["ThemeKitGeneratorCLI"]
         ),
         .testTarget(
             name: "ThemeKitTests",
             dependencies: ["ThemeKit"]
+        ),
+        .testTarget(
+            name: "ThemeKitGeneratorTests",
+            dependencies: ["ThemeKitGenerator"]
         ),
     ]
 )
