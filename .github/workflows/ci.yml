@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: swift build
+
+      - name: Test with coverage
+        run: swift test --enable-code-coverage
+
+      - name: Export coverage to lcov
+        run: |
+          BIN=$(swift build --show-bin-path)
+          xcrun llvm-cov export \
+            "$BIN/ThemeKitPackageTests.xctest/Contents/MacOS/ThemeKitPackageTests" \
+            -instr-profile "$(find .build -name default.profdata -type f)" \
+            -format lcov > coverage.lcov
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.lcov
