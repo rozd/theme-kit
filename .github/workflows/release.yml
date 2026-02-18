@@ -1,0 +1,142 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version and create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # --- Determine base version and commit range -----------------------
+
+          LATEST_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n1)
+
+          if [ -z "$LATEST_TAG" ]; then
+            BASE_VERSION="0.0.0"
+            RANGE="HEAD"
+          else
+            BASE_VERSION="${LATEST_TAG#v}"
+            RANGE="${LATEST_TAG}..HEAD"
+          fi
+
+          COMMITS=$(git log --format="%H %s" "$RANGE")
+
+          if [ -z "$COMMITS" ]; then
+            echo "No new commits since ${LATEST_TAG}. Skipping."
+            exit 0
+          fi
+
+          # --- Analyse commits (Conventional Commits) ------------------------
+
+          BUMP="none"
+          FEAT_LOG=""
+          FIX_LOG=""
+          PERF_LOG=""
+          DOCS_LOG=""
+          OTHER_LOG=""
+
+          while IFS= read -r line; do
+            HASH="${line%% *}"
+            MSG="${line#* }"
+            SHORT_HASH="${HASH:0:7}"
+
+            # Detect breaking changes (! suffix or BREAKING CHANGE trailer)
+            if echo "$MSG" | grep -qE '^[a-z]+(\(.+\))?!:'; then
+              BUMP="major"
+            elif echo "$MSG" | grep -qi 'BREAKING CHANGE'; then
+              BUMP="major"
+            fi
+
+            # Extract type and description
+            TYPE=$(echo "$MSG" | sed -nE 's/^([a-z]+)(\(.+\))?(!)? *:.*/\1/p')
+            DESC=$(echo "$MSG" | sed -nE 's/^[a-z]+(\(.+\))?(!)? *: *(.*)/\3/p')
+
+            if [ -z "$TYPE" ]; then
+              TYPE="other"
+              DESC="$MSG"
+            fi
+
+            ENTRY="- ${DESC} (\`${SHORT_HASH}\`)"
+
+            case "$TYPE" in
+              feat)
+                [ "$BUMP" != "major" ] && BUMP="minor"
+                FEAT_LOG="${FEAT_LOG}${ENTRY}"$'\n'
+                ;;
+              fix)
+                [ "$BUMP" = "none" ] && BUMP="patch"
+                FIX_LOG="${FIX_LOG}${ENTRY}"$'\n'
+                ;;
+              perf)
+                [ "$BUMP" = "none" ] && BUMP="patch"
+                PERF_LOG="${PERF_LOG}${ENTRY}"$'\n'
+                ;;
+              docs)
+                DOCS_LOG="${DOCS_LOG}${ENTRY}"$'\n'
+                ;;
+              *)
+                OTHER_LOG="${OTHER_LOG}${ENTRY}"$'\n'
+                ;;
+            esac
+          done <<< "$COMMITS"
+
+          if [ "$BUMP" = "none" ]; then
+            echo "No version-bumping commits (feat/fix/perf/breaking). Skipping."
+            exit 0
+          fi
+
+          # --- Calculate new version -----------------------------------------
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
+
+          case "$BUMP" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+
+          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "Bump: ${BUMP}  ${BASE_VERSION} → ${NEW_TAG}"
+
+          # --- Build changelog ------------------------------------------------
+
+          BODY="## What's Changed"
+
+          [ -n "$FEAT_LOG" ]  && BODY="${BODY}"$'\n\n'"### Features"$'\n'"${FEAT_LOG}"
+          [ -n "$FIX_LOG" ]   && BODY="${BODY}"$'\n\n'"### Bug Fixes"$'\n'"${FIX_LOG}"
+          [ -n "$PERF_LOG" ]  && BODY="${BODY}"$'\n\n'"### Performance"$'\n'"${PERF_LOG}"
+          [ -n "$DOCS_LOG" ]  && BODY="${BODY}"$'\n\n'"### Documentation"$'\n'"${DOCS_LOG}"
+          [ -n "$OTHER_LOG" ] && BODY="${BODY}"$'\n\n'"### Other Changes"$'\n'"${OTHER_LOG}"
+
+          if [ -n "$LATEST_TAG" ]; then
+            BODY="${BODY}"$'\n'"**Full Changelog**: https://github.com/${REPO}/compare/${LATEST_TAG}...${NEW_TAG}"
+          fi
+
+          # --- Tag and release ------------------------------------------------
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git tag "$NEW_TAG"
+          git push origin "$NEW_TAG"
+
+          gh release create "$NEW_TAG" \
+            --title "$NEW_TAG" \
+            --notes "$BODY"
+
+          echo "Released ${NEW_TAG}"
