@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/rozd/theme-kit/theme.schema.json",
+  "title": "ThemeKit Configuration",
+  "description": "Defines style tokens for ThemeKit code generation.",
+  "type": "object",
+  "properties": {
+    "colors": {
+      "description": "Color style tokens (resolved as ThemeAdaptiveStyle<Color>).",
+      "type": "array",
+      "items": { "$ref": "#/$defs/tokenEntry" }
+    },
+    "gradients": {
+      "description": "Gradient style tokens (resolved as ThemeAdaptiveStyle<Gradient>).",
+      "type": "array",
+      "items": { "$ref": "#/$defs/tokenEntry" }
+    },
+    "shadows": {
+      "description": "Shadow style tokens (resolved as ThemeAdaptiveStyle<Shadow>).",
+      "type": "array",
+      "items": { "$ref": "#/$defs/tokenEntry" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "tokenEntry": {
+      "description": "A style token. Use a string when the ShapeStyle name matches the token name, or an object to override the ShapeStyle name.",
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Token name, used for both the struct property and the ShapeStyle extension."
+        },
+        {
+          "type": "object",
+          "description": "Token with a custom ShapeStyle name.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The struct property name (e.g. \"primary\")."
+            },
+            "style": {
+              "type": "string",
+              "description": "The ShapeStyle extension name (e.g. \"primaryColor\")."
+            }
+          },
+          "required": ["name", "style"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}
