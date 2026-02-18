@@ -1,109 +1,131 @@
 # ThemeKit
+[![Swift 6.2](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org)
+[![License](https://img.shields.io/github/license/rozd/theme-kit)](LICENSE)
+[![codecov](https://codecov.io/gh/rozd/theme-kit/branch/main/graph/badge.svg)](https://codecov.io/gh/rozd/theme-kit)
 
-A Swift package that brings native-feeling theming to SwiftUI. Theme tokens resolve through SwiftUI's environment system — just like built-in styles — so views use `.foregroundStyle(.surface)` with zero boilerplate.
+**Native-feeling theming for SwiftUI, powered by the environment.**
 
-ThemeKit has two parts:
+ThemeKit gives your app a design token system that works exactly like SwiftUI's built-in styles. Every token is adaptive — light and dark variants resolve automatically based on the system color scheme. You declare your tokens in a simple JSON file (just names, no colors), run one command, and you're ready to use `.foregroundStyle(.surface)` anywhere.
 
-1. **Core types** — the theming backbone (`ThemeAdaptiveStyle`, `ThemeShapeStyle`)
-2. **Code generation** — a command plugin that reads your config and generates all theme files
+---
 
-Based on the approach described in [Building a Native-Feeling Theme System in SwiftUI](https://dev.to/rozd/building-a-native-feeling-theme-system-in-swiftui-h1k).
+## ✨ Features
 
-## Quick Start
+- 🍎 **SwiftUI Native** — tokens resolve through `ShapeStyle.resolve(in:)`, the same mechanism as `.primary` and `.tint`. No `@Environment` wrappers needed in views.
+- 🌗 **Adaptive by Default** — every token carries light and dark variants. The correct one resolves automatically at render time — no manual `colorScheme` checks.
+- 📦 **Minimal Core** — the library is just `ThemeAdaptiveStyle` and a few `Codable` extensions. Everything else is generated.
+- 🔧 **Easy Setup** — declare tokens in JSON, run the plugin, fill in your colors. Four steps total.
+- 🔓 **Full Control** — generated files live in your project, fully readable and yours to extend.
 
-### 1. Add the package
+## 🚀 Integration
 
-In Xcode: File → Add Package Dependencies → enter the repository URL:
+### 1. Add ThemeKit
+
+In Xcode: **File → Add Package Dependencies**, then enter:
 
 ```
 https://github.com/rozd/theme-kit
 ```
 
-### 2. Define your tokens
+### 2. Create `theme.json`
 
-Create a `theme.json` in your project root:
+Add a `theme.json` to your project root. This file is just a list of token **names** — no colors, no gradients, no design values. You're declaring the shape of your design language; actual values come in step 4.
+
+Only include the categories you need — the generated `Theme` struct will match:
 
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/rozd/theme-kit/main/theme.schema.json",
-  "colors": ["surface", "onSurface", { "name": "primary", "style": "primaryColor" }],
-  "gradients": ["primary"],
-  "shadows": ["card"]
+  "styles": {
+    "colors": [
+      "surface",
+      "onSurface",
+      { "name": "primary", "style": "primaryColor" }
+    ],
+    "gradients": [
+        { "name": "primary", "style": "primaryGradient" }
+    ]
+  }
 }
 ```
 
-Token entries are either a plain string or an object with `name` and `style` — use the object form when the token name conflicts with SwiftUI built-ins (e.g. `primary`).
+> Use the object form `{ "name": ..., "style": ... }` when a token name conflicts with a SwiftUI built-in (e.g. `primary` → `primaryColor`).
 
 ### 3. Generate theme files
 
-In Xcode: right-click your project → ThemeKit Commands → Generate Theme Files.
+Right-click your project in the Xcode navigator → **Generate Theme Files**.
 
-This generates:
-- `ThemeColors.swift`, `ThemeGradients.swift`, `ThemeShadows.swift` — token structs
-- `ShapeStyle+ThemeColors.swift`, etc. — convenience extensions
-- `Theme.swift` — root container with only the categories you configured
-- `Environment+Theme.swift` — environment integration
-- `copyWith` extensions for all structs
+<details>
+<summary>What gets generated?</summary>
 
-### 4. Provide default values
+- Token structs (`ThemeColors`, `ThemeGradients`, etc.)
+- A root `Theme` container with only the categories you declared
+- `ShapeStyle` extensions so tokens work as `.surface`, `.primaryColor`, etc.
+- `Environment+Theme.swift` for environment plumbing
+- `copyWith` helpers for immutable updates
+- A `Theme+Defaults.swift` scaffold for you to fill in
 
-Create a `Theme+Default.swift` in your project with your app's actual style values:
+</details>
+
+### 4. Fill in defaults
+
+Open the generated `Theme+Defaults.swift` and replace the placeholders with your design values:
 
 ```swift
-extension Theme {
+import SwiftUI
+import ThemeKit
+
+nonisolated extension Theme {
     static let `default` = Theme(
-        colors: ThemeColors(
-            surface: .init(light: Color(hex: 0xF7F5EC), dark: Color(hex: 0x1A1A1A)),
-            primary: .init(light: Color(hex: 0x1B8188), dark: Color(hex: 0x1B8188))
-        ),
-        gradients: ...
+        colors: .default,
+        gradients: .default
+    )
+}
+
+// MARK: - ThemeColors
+
+nonisolated extension ThemeColors {
+    static let `default` = ThemeColors(
+        surface:   .init(light: Color(hex: 0xF7F5EC), dark: Color(hex: 0x1A1A1A)),
+        onSurface: .init(light: Color(hex: 0x2D2D2D), dark: Color(hex: 0xF0F0F0)),
+        primary:   .init(light: Color(hex: 0x1B8188), dark: Color(hex: 0x3DBCC4))
+    )
+}
+
+// MARK: - ThemeGradients
+
+nonisolated extension ThemeGradients {
+    static let `default` = ThemeGradients(
+        primary: .init(
+            light: .init(colors: [Color(hex: 0x1B8188), Color(hex: 0x0E4F54)]),
+            dark:  .init(colors: [Color(hex: 0x3DBCC4), Color(hex: 0x1B8188)])
+        )
     )
 }
 ```
 
-### 5. Use in views
+That's it — your theme is ready to use.
+
+## 🎨 Usage
+
+### Use tokens in views
+
+Theme tokens work just like built-in SwiftUI styles:
 
 ```swift
-@main
-struct MyApp: App {
-    @State private var theme: Theme = .default
-
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .environment(\.theme, theme)
-        }
-    }
-}
-```
-
-```swift
-Text("Hello")
-    .foregroundStyle(.primaryColor)
+Text("Hello, world")
+    .foregroundStyle(.onSurface)
 
 RoundedRectangle(cornerRadius: 12)
     .fill(.surface)
+
+Circle()
+    .fill(.primaryColor)
 ```
 
-## How It Works
+### Switch themes at runtime
 
-Theme tokens are resolved lazily through SwiftUI's `ShapeStyle` protocol. Under the hood, `ThemeShapeStyle<Style>` holds a key path into the `Theme` and resolves the correct light/dark variant at render time using the environment's color scheme:
-
-```swift
-struct ThemeShapeStyle<Style: ShapeStyle>: ShapeStyle, Sendable {
-    let keyPath: KeyPath<Theme, ThemeAdaptiveStyle<Style>>
-
-    func resolve(in environment: EnvironmentValues) -> some ShapeStyle {
-        environment.theme[keyPath: keyPath].resolved(for: environment.colorScheme)
-    }
-}
-```
-
-This means theme-aware styles work exactly like SwiftUI's built-in `.primary` or `.tint` — no `@Environment` property wrappers needed in your views.
-
-## Runtime Theme Switching
-
-Themes support immutable updates via `copyWith`:
+All theme types support immutable updates via `copyWith`:
 
 ```swift
 theme = theme.copyWith(
@@ -113,8 +135,28 @@ theme = theme.copyWith(
 )
 ```
 
-All theme types conform to `Codable`, so themes can be loaded from JSON, a remote database, or any other source.
+### Load themes from JSON
 
-## License
+Every type conforms to `Codable`, so themes can come from a remote API, a bundled file, or user preferences:
 
-MIT
+```swift
+let theme = try JSONDecoder().decode(Theme.self, from: data)
+```
+
+## ⚙️ How It Works
+
+The generated `ThemeShapeStyle<Style>` bridges your tokens into SwiftUI's style resolution system. It holds a key path into `Theme` and resolves the correct light/dark variant at render time:
+
+```swift
+struct ThemeShapeStyle<Style: ShapeStyle>: ShapeStyle {
+    let keyPath: KeyPath<Theme, ThemeAdaptiveStyle<Style>>
+
+    func resolve(in environment: EnvironmentValues) -> some ShapeStyle {
+        environment.theme[keyPath: keyPath].resolved(for: environment.colorScheme)
+    }
+}
+```
+
+This is the same `resolve(in:)` mechanism that powers SwiftUI's built-in `.primary`, `.tint`, and other environment-dependent styles. Your tokens participate in the system as first-class citizens.
+
+For a deep dive, see the [full blog post](https://medium.com/@rozd/building-a-native-feeling-theme-system-in-swiftui-ba5275779df6) or the [implementation details](IMPLEMENTATION_DETAILS.md).
