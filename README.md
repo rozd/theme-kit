@@ -1,11 +1,11 @@
 # ThemeKit
 
-A Swift package that brings native-feeling theming to SwiftUI. Theme tokens resolve through SwiftUI's environment system — just like built-in styles — so views use `.foregroundStyle(.themeSurface)` with zero boilerplate.
+A Swift package that brings native-feeling theming to SwiftUI. Theme tokens resolve through SwiftUI's environment system — just like built-in styles — so views use `.foregroundStyle(.surface)` with zero boilerplate.
 
 ThemeKit has two parts:
 
-1. **Core types** — the theming backbone (`ThemeAdaptiveStyle`, `ThemeShapeStyle`, `Theme`, etc.)
-2. **Code generation** — a command plugin that reads your config and generates style token files
+1. **Core types** — the theming backbone (`ThemeAdaptiveStyle`, `ThemeShapeStyle`)
+2. **Code generation** — a command plugin that reads your config and generates all theme files
 
 Based on the approach described in [Building a Native-Feeling Theme System in SwiftUI](https://dev.to/rozd/building-a-native-feeling-theme-system-in-swiftui-h1k).
 
@@ -25,29 +25,43 @@ Create a `theme.json` in your project root:
 
 ```json
 {
-  "colors": ["surface", "onSurface", "primary", "onPrimary"],
+  "$schema": "https://raw.githubusercontent.com/rozd/theme-kit/main/theme.schema.json",
+  "colors": ["surface", "onSurface", { "name": "primary", "style": "primaryColor" }],
   "gradients": ["primary"],
   "shadows": ["card"]
 }
 ```
 
+Token entries are either a plain string or an object with `name` and `style` — use the object form when the token name conflicts with SwiftUI built-ins (e.g. `primary`).
+
 ### 3. Generate theme files
 
 In Xcode: right-click your project → ThemeKit Commands → Generate Theme Files.
 
-This reads your config and generates the style token structs, default values, and `ShapeStyle` extensions.
+This generates:
+- `ThemeColors.swift`, `ThemeGradients.swift`, `ThemeShadows.swift` — token structs
+- `ShapeStyle+ThemeColors.swift`, etc. — convenience extensions
+- `Theme.swift` — root container with only the categories you configured
+- `Environment+Theme.swift` — environment integration
+- `copyWith` extensions for all structs
 
-### 4. Use in views
+### 4. Provide default values
+
+Create a `Theme+Default.swift` in your project with your app's actual style values:
 
 ```swift
-Text("Hello")
-    .foregroundStyle(.themePrimary)
-
-RoundedRectangle(cornerRadius: 12)
-    .fill(.themeSurface)
+extension Theme {
+    static let `default` = Theme(
+        colors: ThemeColors(
+            surface: .init(light: Color(hex: 0xF7F5EC), dark: Color(hex: 0x1A1A1A)),
+            primary: .init(light: Color(hex: 0x1B8188), dark: Color(hex: 0x1B8188))
+        ),
+        gradients: ...
+    )
+}
 ```
 
-Inject a theme at the root of your app:
+### 5. Use in views
 
 ```swift
 @main
@@ -61,6 +75,14 @@ struct MyApp: App {
         }
     }
 }
+```
+
+```swift
+Text("Hello")
+    .foregroundStyle(.primaryColor)
+
+RoundedRectangle(cornerRadius: 12)
+    .fill(.surface)
 ```
 
 ## How It Works
