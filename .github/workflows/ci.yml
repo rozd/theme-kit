@@ -31,6 +31,12 @@ jobs:
             -instr-profile "$(find .build -name default.profdata -type f)" \
             -format lcov > coverage.lcov
 
+      - name: Upload coverage report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.lcov
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
