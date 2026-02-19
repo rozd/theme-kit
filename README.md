@@ -142,14 +142,39 @@ RoundedRectangle(cornerRadius: 12)
 
 ### Switch themes at runtime
 
-All theme types support immutable updates via `copyWith`:
+The generated `Environment+Theme.swift` provides implicit theme injection — every token resolves against `Theme.default` automatically, so things just work with no setup. When you need to switch themes at runtime, override the environment value:
 
 ```swift
-theme = theme.copyWith(
-    colors: theme.colors.copyWith(
-        primary: .init(light: .purple, dark: .indigo)
+struct MyApp: App {
+    @State private var theme: Theme = .default
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .environment(\.theme, theme)
+        }
+    }
+}
+```
+
+Define alternative themes using `copyWith` for immutable updates:
+
+```swift
+extension Theme {
+    static let ocean = Theme.default.copyWith(
+        colors: ThemeColors.default.copyWith(
+            primary: .init(light: .blue, dark: .cyan)
+        )
     )
-)
+}
+```
+
+Then swap themes by updating the state:
+
+```swift
+Button("Ocean Theme") {
+    theme = .ocean
+}
 ```
 
 ### Load themes from JSON
