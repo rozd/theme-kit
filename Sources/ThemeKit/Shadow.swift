@@ -2,8 +2,16 @@ import SwiftUI
 
 nonisolated public enum Shadow: Sendable, Codable, Equatable {
     case none
-    case drop(color: Color? = nil, radius: CGFloat, x: CGFloat = 0.0, y: CGFloat = 0.0)
-    case inner(color: Color? = nil, radius: CGFloat, x: CGFloat = 0.0, y: CGFloat = 0.0)
+    case drop(color: Color?, radius: CGFloat, x: CGFloat = 0.0, y: CGFloat = 0.0)
+    case inner(color: Color?, radius: CGFloat, x: CGFloat = 0.0, y: CGFloat = 0.0)
+
+    public static func drop(radius: CGFloat, x: CGFloat = 0.0, y: CGFloat = 0.0) -> Shadow {
+        .drop(color: nil, radius: radius, x: x, y: y)
+    }
+
+    public static func inner(radius: CGFloat, x: CGFloat = 0.0, y: CGFloat = 0.0) -> Shadow {
+        .inner(color: nil, radius: radius, x: x, y: y)
+    }
 }
 
 public extension Shadow {
