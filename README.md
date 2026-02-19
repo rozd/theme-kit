@@ -62,6 +62,7 @@ Right-click your project in the Xcode navigator → **Generate Theme Files**.
 - Token structs (`ThemeColors`, `ThemeGradients`, etc.)
 - A root `Theme` container with only the categories you declared
 - `ShapeStyle` extensions so tokens work as `.surface`, `.primaryColor`, etc.
+- `ThemeShadowedStyle` for chaining shadow tokens onto any style (only when shadows are configured)
 - `Environment+Theme.swift` for environment plumbing
 - `copyWith` helpers for immutable updates
 - A `Theme+Defaults.swift` scaffold for you to fill in
@@ -124,16 +125,56 @@ Circle()
     .fill(.primaryColor)
 ```
 
-### Switch themes at runtime
+### Compose shadows
 
-All theme types support immutable updates via `copyWith`:
+When your config includes shadow tokens, you can chain them onto any style:
 
 ```swift
-theme = theme.copyWith(
-    colors: theme.colors.copyWith(
-        primary: .init(light: .purple, dark: .indigo)
+RoundedRectangle(cornerRadius: 12)
+    .fill(.surface.card)              // theme color + theme shadow
+
+RoundedRectangle(cornerRadius: 12)
+    .fill(.red.card)                  // SwiftUI color + theme shadow
+
+RoundedRectangle(cornerRadius: 12)
+    .fill(.surface.card.innerGlow)    // multiple shadows chained
+```
+
+### Switch themes at runtime
+
+The generated `Environment+Theme.swift` provides implicit theme injection — every token resolves against `Theme.default` automatically, so things just work with no setup. When you need to switch themes at runtime, override the environment value:
+
+```swift
+struct MyApp: App {
+    @State private var theme: Theme = .default
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .environment(\.theme, theme)
+        }
+    }
+}
+```
+
+Define alternative themes using `copyWith` for immutable updates:
+
+```swift
+extension Theme {
+    static let ocean = Theme.default.copyWith(
+        colors: ThemeColors.default.copyWith(
+            primary: .init(light: .blue, dark: .cyan)
+        )
     )
-)
+}
+```
+
+Then swap themes by updating the state:
+
+```swift
+Button("Ocean Theme") {
+    theme = .ocean
+}
 ```
 
 ### Load themes from JSON

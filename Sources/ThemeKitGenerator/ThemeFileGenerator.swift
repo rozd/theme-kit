@@ -11,6 +11,11 @@ nonisolated public struct ThemeFileGenerator: Sendable {
         files.append(ThemeShapeStyleGenerator().generate())
         files.append(EnvironmentThemeGenerator().generate())
 
+        // Conditional static files
+        if config.categories.contains(.shadows) {
+            files.append(ThemeShadowedStyleGenerator().generate())
+        }
+
         // Theme root struct
         files.append(ThemeStructGenerator().generate(from: config))
 

@@ -22,6 +22,24 @@ struct ThemeFileGeneratorTests {
     }
     """.utf8)
 
+    let shadowsOnlyJSON = Data("""
+    {
+        "styles": {
+            "shadows": ["card", {"name": "inner", "style": "innerGlow"}]
+        }
+    }
+    """.utf8)
+
+    let fullWithShadowsJSON = Data("""
+    {
+        "styles": {
+            "colors": ["surface", {"name": "primary", "style": "primaryColor"}],
+            "gradients": ["primary"],
+            "shadows": ["card"]
+        }
+    }
+    """.utf8)
+
     // MARK: - File list
 
     @Test func fullConfig_generatesAllExpectedFiles() throws {
@@ -242,5 +260,76 @@ struct ThemeFileGeneratorTests {
     @Test func missingConfig_usesDefaultOutputPath() throws {
         let result = try ThemeFileGenerator().generate(fromJSON: colorsOnlyJSON)
         #expect(result.outputPath == ".")
+    }
+
+    // MARK: - Shadow composition
+
+    @Test func shadowsPresent_generatesThemeShadowedStyle() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: shadowsOnlyJSON).files
+        let names = Set(files.map(\.name))
+
+        #expect(names.contains("ThemeShadowedStyle.swift"))
+    }
+
+    @Test func shadowsAbsent_doesNotGenerateThemeShadowedStyle() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: fullJSON).files
+        let names = Set(files.map(\.name))
+
+        #expect(!names.contains("ThemeShadowedStyle.swift"))
+    }
+
+    @Test func themeShadowedStyle_contentPatterns() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: shadowsOnlyJSON).files
+        let file = try #require(files.first { $0.name == "ThemeShadowedStyle.swift" })
+
+        #expect(file.content.contains("struct ThemeShadowedStyle<Base: ShapeStyle>"))
+        #expect(file.content.contains("func resolve(in environment: EnvironmentValues)"))
+        #expect(file.content.contains("AnyShapeStyle"))
+        #expect(file.content.contains("ThemeShadowedStyle: Equatable where Base: Equatable"))
+    }
+
+    @Test func shadowShapeStyle_containsBothStaticAndInstanceProperties() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: shadowsOnlyJSON).files
+        let shadowExt = try #require(files.first { $0.name == "ShapeStyle+ThemeShadows.swift" })
+
+        // Static properties (standalone use)
+        #expect(shadowExt.content.contains("static var card: Self"))
+        #expect(shadowExt.content.contains("static var innerGlow: Self"))
+
+        // Instance properties (composition)
+        #expect(shadowExt.content.contains("public var card: ThemeShadowedStyle<Self>"))
+        #expect(shadowExt.content.contains("public var innerGlow: ThemeShadowedStyle<Self>"))
+    }
+
+    @Test func shadowInstanceProperties_useCorrectNamesAndKeypaths() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: shadowsOnlyJSON).files
+        let shadowExt = try #require(files.first { $0.name == "ShapeStyle+ThemeShadows.swift" })
+
+        // "card" token: name == style, instance property is "card", keypath uses "card"
+        #expect(shadowExt.content.contains("var card: ThemeShadowedStyle<Self> { .init(base: self, shadowKeyPath: \\.shadows.card)"))
+
+        // "inner" token with style "innerGlow": instance property is "innerGlow", keypath uses "inner"
+        #expect(shadowExt.content.contains("var innerGlow: ThemeShadowedStyle<Self> { .init(base: self, shadowKeyPath: \\.shadows.inner)"))
+    }
+
+    @Test func fullWithShadows_generatesCorrectFileCount() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: fullWithShadowsJSON).files
+        let names = Set(files.map(\.name))
+
+        // 2 static + 1 conditional static + 1 theme + 1 theme copyWith + 3×3 per-category + 1 defaults = 15
+        #expect(names.contains("ThemeShadowedStyle.swift"))
+        #expect(names.contains("ThemeShadows.swift"))
+        #expect(names.contains("ShapeStyle+ThemeShadows.swift"))
+        #expect(files.count == 15)
+    }
+
+    @Test func nonShadowCategories_doNotContainInstanceProperties() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: fullWithShadowsJSON).files
+
+        let colorsExt = try #require(files.first { $0.name == "ShapeStyle+ThemeColors.swift" })
+        #expect(!colorsExt.content.contains("ThemeShadowedStyle"))
+
+        let gradientsExt = try #require(files.first { $0.name == "ShapeStyle+ThemeGradients.swift" })
+        #expect(!gradientsExt.content.contains("ThemeShadowedStyle"))
     }
 }
