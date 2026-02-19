@@ -87,9 +87,11 @@ jobs:
                 PERF_LOG="${PERF_LOG}${ENTRY}"$'\n'
                 ;;
               docs)
+                [ "$BUMP" = "none" ] && BUMP="patch"
                 DOCS_LOG="${DOCS_LOG}${ENTRY}"$'\n'
                 ;;
               *)
+                [ "$BUMP" = "none" ] && BUMP="patch"
                 OTHER_LOG="${OTHER_LOG}${ENTRY}"$'\n'
                 ;;
             esac
