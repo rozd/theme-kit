@@ -62,6 +62,7 @@ Right-click your project in the Xcode navigator → **Generate Theme Files**.
 - Token structs (`ThemeColors`, `ThemeGradients`, etc.)
 - A root `Theme` container with only the categories you declared
 - `ShapeStyle` extensions so tokens work as `.surface`, `.primaryColor`, etc.
+- `ThemeShadowedStyle` for chaining shadow tokens onto any style (only when shadows are configured)
 - `Environment+Theme.swift` for environment plumbing
 - `copyWith` helpers for immutable updates
 - A `Theme+Defaults.swift` scaffold for you to fill in
@@ -122,6 +123,21 @@ RoundedRectangle(cornerRadius: 12)
 
 Circle()
     .fill(.primaryColor)
+```
+
+### Compose shadows
+
+When your config includes shadow tokens, you can chain them onto any style:
+
+```swift
+RoundedRectangle(cornerRadius: 12)
+    .fill(.surface.card)              // theme color + theme shadow
+
+RoundedRectangle(cornerRadius: 12)
+    .fill(.red.card)                  // SwiftUI color + theme shadow
+
+RoundedRectangle(cornerRadius: 12)
+    .fill(.surface.card.innerGlow)    // multiple shadows chained
 ```
 
 ### Switch themes at runtime

@@ -42,9 +42,10 @@ In Xcode: right-click your project → Generate Theme Files.
 
 This generates:
 - `ThemeColors.swift`, `ThemeGradients.swift`, `ThemeShadows.swift` — token structs
-- `ShapeStyle+ThemeColors.swift`, etc. — convenience extensions
+- `ShapeStyle+ThemeColors.swift`, etc. — convenience extensions (shadow extensions also include instance properties for composition)
 - `Theme.swift` — root container with only the categories you configured
 - `ThemeShapeStyle.swift` — `ShapeStyle` implementation that resolves tokens via the environment
+- `ThemeShadowedStyle.swift` — composing wrapper for chaining shadows onto any style (only when shadows are configured)
 - `Environment+Theme.swift` — environment integration
 - `Theme+Defaults.swift` — scaffold for default theme values
 - `copyWith` extensions for all structs
@@ -87,6 +88,10 @@ Text("Hello")
 
 RoundedRectangle(cornerRadius: 12)
     .fill(.surface)
+
+// Shadow composition — chain shadow tokens onto any style
+RoundedRectangle(cornerRadius: 12)
+    .fill(.surface.card)
 ```
 
 ## How It Works
