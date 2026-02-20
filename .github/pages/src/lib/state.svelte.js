@@ -69,6 +69,13 @@ export function getTokens(category) {
 }
 
 /**
+ * Get all styles (for validation purposes).
+ */
+export function getAllStyles() {
+  return styles;
+}
+
+/**
  * Get a config property value.
  */
 export function getConfig(key) {
