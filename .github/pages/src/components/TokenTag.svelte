@@ -1,5 +1,6 @@
 <script>
   import TokenPopover from './TokenPopover.svelte';
+  import { hasBuiltinConflict } from '../lib/validation.js';
 
   let { token, tokenProperties = [], onremove, onupdate } = $props();
 
@@ -14,10 +15,18 @@
   }
 
   let hasOverride = $derived(token.name !== token.style);
+  let hasConflict = $derived(hasBuiltinConflict(token));
 </script>
 
-<span class="token-tag" class:has-override={hasOverride}>
+<span class="token-tag" class:has-override={hasOverride} class:has-conflict={hasConflict}>
   <span class="tag-name">{token.name}</span>
+  {#if hasConflict}
+    <span class="tag-warning" title="Shadows SwiftUI's built-in .{token.name} — open to set a custom style name">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8.982 1.566a1.13 1.13 0 00-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 01-1.1 0L7.1 5.995A.905.905 0 018 5zm.002 6a1 1 0 110 2 1 1 0 010-2z"/>
+      </svg>
+    </span>
+  {/if}
   <button class="tag-btn info-btn" onclick={togglePopover} aria-label="Edit token properties">
     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
       <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 2.5a1 1 0 110 2 1 1 0 010-2zM6.5 7h2l.5 0v5h-1V8h-1.5V7z"/>

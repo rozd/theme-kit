@@ -1,5 +1,6 @@
 <script>
   import { untrack } from 'svelte';
+  import { SWIFTUI_BUILTIN_STYLES } from '../lib/validation.js';
 
   let { token, tokenProperties = [], onupdate, onclose } = $props();
 
@@ -20,6 +21,10 @@
     onupdate(key, raw || token.name);
   }
 
+  let showWarning = $derived(
+    SWIFTUI_BUILTIN_STYLES.has(values.style || token.name) && !values.style
+  );
+
   function handleKeydown(e) {
     if (e.key === 'Escape') onclose();
   }
@@ -31,6 +36,11 @@
     <span class="popover-title">{token.name}</span>
     <button class="popover-close" onclick={onclose} aria-label="Close">&times;</button>
   </div>
+  {#if showWarning}
+    <div class="popover-warning">
+      Shadows SwiftUI's built-in <code>.{token.name}</code> — set a custom style name below.
+    </div>
+  {/if}
   {#each tokenProperties as prop}
     <div class="popover-field">
       <label for="token-prop-{prop.key}">{prop.key}</label>
