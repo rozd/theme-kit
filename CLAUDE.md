@@ -76,6 +76,10 @@ Only categories present in config are included in generated `Theme` struct.
 
 The config model (`ThemeToken`) is a struct with `name` and `style` properties and custom `Codable` — strings decode to both fields equal, objects require both keys. Encoding round-trips: equal name/style encodes as string.
 
+### Configurator Web App
+
+A Svelte SPA at `.github/pages/` that lets users build `theme.json` visually instead of editing JSON by hand. Deployed to GitHub Pages (`https://rozd.github.io/theme-kit/`) via `.github/workflows/deploy-pages.yml`. Fetches the JSON Schema at runtime to drive the UI — categories, token fields, and config options are all derived from `theme.schema.json`.
+
 ## Key Patterns
 
 - All types are `nonisolated`, `Sendable`, and `Codable`

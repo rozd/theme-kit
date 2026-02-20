@@ -7,6 +7,7 @@
 }
 
 :root {
+  color-scheme: light;
   --color-bg: #fafafa;
   --color-surface: #ffffff;
   --color-border: #e2e2e2;
@@ -22,6 +23,40 @@
   --radius: 6px;
   --radius-lg: 10px;
   --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --color-bg: #161616;
+    --color-surface: #1e1e1e;
+    --color-border: #333;
+    --color-border-focus: #666;
+    --color-text: #e4e4e4;
+    --color-text-muted: #999;
+    --color-primary: #5b9aff;
+    --color-primary-light: #1a2744;
+    --color-danger: #f87171;
+    --color-danger-light: #3b1616;
+    --color-tag-bg: #2a2a2a;
+    --color-tag-override: #1e2d4a;
+  }
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg: #161616;
+  --color-surface: #1e1e1e;
+  --color-border: #333;
+  --color-border-focus: #666;
+  --color-text: #e4e4e4;
+  --color-text-muted: #999;
+  --color-primary: #5b9aff;
+  --color-primary-light: #1a2744;
+  --color-danger: #f87171;
+  --color-danger-light: #3b1616;
+  --color-tag-bg: #2a2a2a;
+  --color-tag-override: #1e2d4a;
 }
 
 body {
@@ -248,7 +283,7 @@ section h2 {
 }
 
 .tag-name {
-  padding: 0 0.25rem;
+  padding: 0 0.25rem 0 0.5rem;
   font-family: var(--font-mono);
   font-size: 0.8rem;
 }
@@ -273,8 +308,8 @@ section h2 {
 }
 
 .remove-btn:hover {
-  background: var(--color-danger-light);
-  color: var(--color-danger);
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--color-text);
 }
 
 /* Token add input */
@@ -473,4 +508,47 @@ section h2 {
 .error-banner p:last-child {
   font-size: 0.85rem;
   margin-top: 0.25rem;
+}
+
+/* Theme toggle */
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 100px;
+  background: var(--color-surface);
+  padding: 2px;
+  gap: 0;
+}
+
+.theme-toggle button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 100px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  transition: background 0.15s, color 0.15s;
+  line-height: 1;
+  gap: 0.3rem;
+}
+
+.theme-toggle button:hover {
+  color: var(--color-text);
+}
+
+.theme-toggle button.active {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.theme-toggle svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
 }
