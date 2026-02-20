@@ -1,9 +1,9 @@
 # ThemeKit
-[![Release](https://img.shields.io/github/v/release/rozd/theme-kit)](https://github.com/rozd/theme-kit/releases)
-[![Swift 6.2](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org)
-[![License](https://img.shields.io/github/license/rozd/theme-kit)](LICENSE)
-[![codecov](https://codecov.io/gh/rozd/theme-kit/branch/main/graph/badge.svg)](https://codecov.io/gh/rozd/theme-kit)
 [![Platforms](https://img.shields.io/badge/Platforms-iOS_|_macOS_|_watchOS_|_tvOS_|_visionOS-blue.svg)](https://developer.apple.com/xcode/)
+[![Swift 6.2](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org)
+[![Release](https://img.shields.io/github/v/release/rozd/theme-kit)](https://github.com/rozd/theme-kit/releases)
+[![codecov](https://codecov.io/gh/rozd/theme-kit/branch/main/graph/badge.svg)](https://codecov.io/gh/rozd/theme-kit)
+[![License](https://img.shields.io/github/license/rozd/theme-kit)](LICENSE)
 
 **Native-feeling theming for SwiftUI, powered by the environment.**
 
@@ -23,6 +23,10 @@ ThemeKit gives your app a design token system that works exactly like SwiftUI's 
 
 https://github.com/user-attachments/assets/f4563c6a-57e2-4356-bd87-72276ec9bf96
 
+## 🛠️ Configurator
+
+You don't need to write JSON by hand, use the [**ThemeKit Configurator**](https://rozd.github.io/theme-kit/) — a visual editor that lets you toggle categories, add tokens, configure style overrides, and copy the finished `theme.json` straight into your project.
+
 ## 🚀 Integration
 
 ### 1. Add ThemeKit
@@ -35,7 +39,7 @@ https://github.com/rozd/theme-kit
 
 ### 2. Create `theme.json`
 
-Add a `theme.json` to your project root. This file is just a list of token **names** — no colors, no gradients, no design values. You're declaring the shape of your design language; actual values come in step 4.
+Add a `theme.json` to your project root (or use the [Configurator](https://rozd.github.io/theme-kit/) to build it visually). This file is just a list of token **names** — no colors, no gradients, no design values. You're declaring the shape of your design language; actual values come in step 4.
 
 Only include the categories you need — the generated `Theme` struct will match:
 
