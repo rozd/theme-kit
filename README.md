@@ -19,6 +19,10 @@ ThemeKit gives your app a design token system that works exactly like SwiftUI's 
 - 🔧 **Easy Setup** — declare tokens in JSON, run the plugin, fill in your colors. Four steps total.
 - 🔓 **Full Control** — generated files live in your project, fully readable and yours to extend.
 
+## 🍿 Demo
+
+https://github.com/user-attachments/assets/f4563c6a-57e2-4356-bd87-72276ec9bf96
+
 ## 🚀 Integration
 
 ### 1. Add ThemeKit
