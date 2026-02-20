@@ -26,6 +26,7 @@
       <TokenTag
         {token}
         {tokenProperties}
+        {category}
         onremove={() => removeToken(category, index)}
         onupdate={(key, value) => updateToken(category, index, key, value)}
       />
