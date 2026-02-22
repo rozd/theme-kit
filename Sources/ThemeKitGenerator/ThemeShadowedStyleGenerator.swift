@@ -20,7 +20,7 @@ nonisolated public struct ThemeShadowedStyleGenerator: Sendable {
 
             nonisolated public func resolve(in environment: EnvironmentValues) -> some ShapeStyle {
                 let shadow = environment.theme[keyPath: shadowKeyPath]
-                    .resolved(for: environment.colorScheme)
+                    .resolved(in: environment)
                 guard let shadowStyle = shadow.shadowStyle else {
                     return AnyShapeStyle(base)
                 }

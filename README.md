@@ -7,14 +7,14 @@
 
 **Native-feeling theming for SwiftUI, powered by the environment.**
 
-ThemeKit gives your app a design token system that works exactly like SwiftUI's built-in styles. Every token is adaptive — light and dark variants resolve automatically based on the system color scheme. You declare your tokens in a simple JSON file (just names, no colors), run one command, and you're ready to use `.foregroundStyle(.surface)` anywhere.
+ThemeKit gives your app a design token system that works exactly like SwiftUI's built-in styles. Every token is adaptive — variants resolve automatically based on the environment (color scheme, size class, or any custom axis). You declare your tokens in a simple JSON file (just names, no colors), run one command, and you're ready to use `.foregroundStyle(.surface)` anywhere.
 
 ---
 
 ## ✨ Features
 
 - 🍎 **SwiftUI Native** — tokens resolve through `ShapeStyle.resolve(in:)`, the same mechanism as `.primary` and `.tint`. No `@Environment` wrappers needed in views.
-- 🌗 **Adaptive by Default** — every token carries light and dark variants. The correct one resolves automatically at render time — no manual `colorScheme` checks.
+- 🌗 **Adaptive by Default** — tokens adapt by color scheme (light/dark), size class (compact/regular), or any custom axis via resolvers. The correct variant resolves automatically at render time.
 - 📦 **Minimal Core** — the library is just `ThemeAdaptiveStyle` and a few `Codable` extensions. Everything else is generated.
 - 🔧 **Easy Setup** — declare tokens in JSON, run the plugin, fill in your colors. Four steps total.
 - 🔓 **Full Control** — generated files live in your project, fully readable and yours to extend.
@@ -117,6 +117,35 @@ nonisolated extension ThemeGradients {
 
 That's it — your theme is ready to use.
 
+<details>
+<summary>Advanced</summary>
+
+Beyond light/dark, tokens can adapt by **size class** or hold a **constant value**:
+
+```swift
+// Adapt by horizontal size class (compact vs regular)
+surface: .init(compact: Color(hex: 0xFFFFFF), regular: Color(hex: 0xF7F5EC))
+
+// Same value in all environments
+surface: .init(value: Color(hex: 0xF7F5EC))
+```
+
+For full control, use a **custom resolver** — a closure that reads `EnvironmentValues` directly:
+
+```swift
+surface: .init(resolver: .init(id: "high-contrast") { env in
+    env.colorSchemeContrast == .increased
+        ? Color(hex: 0xFFFFFF)
+        : Color(hex: 0xF7F5EC)
+})
+```
+
+The `id` parameter drives `Equatable` — two resolvers with the same `id` are considered equal, which lets SwiftUI skip unnecessary redraws. Omit it to get a unique auto-generated id.
+
+> **Note:** Tokens created with a custom resolver cannot be encoded to JSON, since they have no serializable defaults.
+
+</details>
+
 ## 🎨 Usage
 
 ### Use tokens in views
@@ -196,14 +225,14 @@ let theme = try JSONDecoder().decode(Theme.self, from: data)
 
 ## ⚙️ How It Works
 
-The generated `ThemeShapeStyle<Style>` bridges your tokens into SwiftUI's style resolution system. It holds a key path into `Theme` and resolves the correct light/dark variant at render time:
+The generated `ThemeShapeStyle<Style>` bridges your tokens into SwiftUI's style resolution system. It holds a key path into `Theme` and resolves the correct variant at render time:
 
 ```swift
 struct ThemeShapeStyle<Style: ShapeStyle>: ShapeStyle {
     let keyPath: KeyPath<Theme, ThemeAdaptiveStyle<Style>>
 
     func resolve(in environment: EnvironmentValues) -> some ShapeStyle {
-        environment.theme[keyPath: keyPath].resolved(for: environment.colorScheme)
+        environment.theme[keyPath: keyPath].resolved(in: environment)
     }
 }
 ```

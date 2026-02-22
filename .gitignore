@@ -17,3 +17,4 @@ default.profraw
 .github/pages/node_modules/
 
 .github/pages/dist/
+.github/pages/.vite/
