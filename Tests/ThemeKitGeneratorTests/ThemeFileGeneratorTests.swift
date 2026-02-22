@@ -167,7 +167,7 @@ struct ThemeFileGeneratorTests {
 
         #expect(shapeStyle.content.contains("func resolve(in environment: EnvironmentValues)"))
         #expect(shapeStyle.content.contains("environment.theme[keyPath: keyPath]"))
-        #expect(shapeStyle.content.contains("environment.colorScheme"))
+        #expect(shapeStyle.content.contains("environment"))
     }
 
     @Test func environmentExtension_containsThemeEntry() throws {

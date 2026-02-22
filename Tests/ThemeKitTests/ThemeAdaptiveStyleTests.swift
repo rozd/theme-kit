@@ -10,21 +10,25 @@ struct ThemeAdaptiveStyleTests {
 
     @Test func init_storesLightAndDark() throws {
         let style = ThemeAdaptiveStyle(light: Color(hex: 0xFF0000), dark: Color(hex: 0x0000FF))
-        #expect(try style.light.hexString == "#FF0000")
-        #expect(try style.dark.hexString == "#0000FF")
+        #expect(try style.light?.hexString == "#FF0000")
+        #expect(try style.dark?.hexString == "#0000FF")
     }
 
-    // MARK: - resolved(for:)
+    // MARK: - resolved(in:)
 
     @Test func resolved_forLight_returnsLightValue() throws {
         let style = ThemeAdaptiveStyle(light: Color(hex: 0xFF0000), dark: Color(hex: 0x0000FF))
-        let resolved = style.resolved(for: .light)
+        var env = EnvironmentValues()
+        env.colorScheme = .light
+        let resolved = style.resolved(in: env)
         #expect(try resolved.hexString == "#FF0000")
     }
 
     @Test func resolved_forDark_returnsDarkValue() throws {
         let style = ThemeAdaptiveStyle(light: Color(hex: 0xFF0000), dark: Color(hex: 0x0000FF))
-        let resolved = style.resolved(for: .dark)
+        var env = EnvironmentValues()
+        env.colorScheme = .dark
+        let resolved = style.resolved(in: env)
         #expect(try resolved.hexString == "#0000FF")
     }
 
@@ -34,8 +38,8 @@ struct ThemeAdaptiveStyleTests {
         let original = ThemeAdaptiveStyle(light: Color(hex: 0xFF0000), dark: Color(hex: 0x0000FF))
         let data = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(ThemeAdaptiveStyle<Color>.self, from: data)
-        #expect(try decoded.light.hexString == "#FF0000")
-        #expect(try decoded.dark.hexString == "#0000FF")
+        #expect(try decoded.light?.hexString == "#FF0000")
+        #expect(try decoded.dark?.hexString == "#0000FF")
     }
 
     @Test func codableRoundTrip_color_jsonStructure() throws {
@@ -84,10 +88,10 @@ struct ThemeAdaptiveStyleTests {
         )
         let data = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(ThemeAdaptiveStyle<Gradient>.self, from: data)
-        #expect(decoded.light.stops.count == 2)
-        #expect(decoded.dark.stops.count == 2)
-        #expect(try decoded.light.stops[0].color.hexString == "#FF0000")
-        #expect(try decoded.dark.stops[0].color.hexString == "#0000FF")
+        #expect(decoded.light?.stops.count == 2)
+        #expect(decoded.dark?.stops.count == 2)
+        #expect(try decoded.light?.stops[0].color.hexString == "#FF0000")
+        #expect(try decoded.dark?.stops[0].color.hexString == "#0000FF")
     }
 
     // MARK: - Nested structure
@@ -99,8 +103,8 @@ struct ThemeAdaptiveStyleTests {
         let decoded = try JSONDecoder().decode(
             ThemeAdaptiveStyle<ThemeAdaptiveStyle<Color>>.self, from: data
         )
-        #expect(try decoded.light.light.hexString == "#FF0000")
-        #expect(try decoded.light.dark.hexString == "#0000FF")
+        #expect(try decoded.light?.light?.hexString == "#FF0000")
+        #expect(try decoded.light?.dark?.hexString == "#0000FF")
     }
 
     // MARK: - ShapeStyle resolve(in:) — environment integration
@@ -122,7 +126,7 @@ struct ThemeAdaptiveStyleTests {
     }
 
     @Test func resolve_readsColorSchemeFromEnvironment() throws {
-        // resolve(in:) calls resolved(for: environment.colorScheme).
+        // resolve(in:) calls resolved(in: environment).
         // Verify the environment plumbing selects the correct variant.
         var lightEnv = EnvironmentValues()
         lightEnv.colorScheme = .light
@@ -131,9 +135,9 @@ struct ThemeAdaptiveStyleTests {
 
         let style = ThemeAdaptiveStyle(light: Color(hex: 0xFF0000), dark: Color(hex: 0x0000FF))
 
-        // Trace the same code path as resolve(in:): read colorScheme, call resolved(for:)
-        #expect(try style.resolved(for: lightEnv.colorScheme).hexString == "#FF0000")
-        #expect(try style.resolved(for: darkEnv.colorScheme).hexString == "#0000FF")
+        // Trace the same code path as resolve(in:): read colorScheme, call resolved(in:)
+        #expect(try style.resolved(in: lightEnv).hexString == "#FF0000")
+        #expect(try style.resolved(in: darkEnv).hexString == "#0000FF")
 
         // Exercise the actual ShapeStyle resolve entry point
         let _ = style.resolve(in: lightEnv)
@@ -146,7 +150,7 @@ struct ThemeAdaptiveStyleTests {
         #expect(env.colorScheme == .light)
 
         let style = ThemeAdaptiveStyle(light: Color(hex: 0xFF0000), dark: Color(hex: 0x0000FF))
-        #expect(try style.resolved(for: env.colorScheme).hexString == "#FF0000")
+        #expect(try style.resolved(in: env).hexString == "#FF0000")
         let _ = style.resolve(in: env)
     }
 
@@ -157,7 +161,78 @@ struct ThemeAdaptiveStyleTests {
         {"light": "#FF0000", "dark": "#0000FF"}
         """.utf8)
         let decoded = try JSONDecoder().decode(ThemeAdaptiveStyle<Color>.self, from: json)
-        #expect(try decoded.light.hexString == "#FF0000")
-        #expect(try decoded.dark.hexString == "#0000FF")
+        #expect(try decoded.light?.hexString == "#FF0000")
+        #expect(try decoded.dark?.hexString == "#0000FF")
+    }
+
+    // MARK: - Resolver
+
+    @Test func resolver_init_setsLightAndDarkToNil() {
+        let style = ThemeAdaptiveStyle<Color>(resolver: .init(id: "test") { _ in .red })
+        #expect(style.light == nil)
+        #expect(style.dark == nil)
+    }
+
+    @Test func resolver_customResolver_overridesDefaultBehavior() {
+        // Custom resolver that inverts the default: light in dark mode, dark in light mode
+        let style = ThemeAdaptiveStyle<Color>(resolver: .init(id: "inverted") { env in
+            env.colorScheme == .dark ? Color(hex: 0xFF0000) : Color(hex: 0x0000FF)
+        })
+        var lightEnv = EnvironmentValues()
+        lightEnv.colorScheme = .light
+        #expect(style.resolved(in: lightEnv) == Color(hex: 0x0000FF))
+
+        var darkEnv = EnvironmentValues()
+        darkEnv.colorScheme = .dark
+        #expect(style.resolved(in: darkEnv) == Color(hex: 0xFF0000))
+    }
+
+    @Test func resolver_dataTokens_sameLightDark_areEqual() {
+        let a = ThemeAdaptiveStyle(light: Color(hex: 0xFF0000), dark: Color(hex: 0x0000FF))
+        let b = ThemeAdaptiveStyle(light: Color(hex: 0xFF0000), dark: Color(hex: 0x0000FF))
+        #expect(a == b)
+    }
+
+    @Test func resolver_dataTokens_differentLightDark_areNotEqual() {
+        let a = ThemeAdaptiveStyle(light: Color(hex: 0xFF0000), dark: Color(hex: 0x0000FF))
+        let b = ThemeAdaptiveStyle(light: Color(hex: 0x00FF00), dark: Color(hex: 0x0000FF))
+        #expect(a != b)
+    }
+
+    @Test func resolver_codableRoundTrip_preservesEquality() throws {
+        let original = ThemeAdaptiveStyle(light: Color(hex: 0xFF0000), dark: Color(hex: 0x0000FF))
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(ThemeAdaptiveStyle<Color>.self, from: data)
+        #expect(original == decoded)
+    }
+
+    @Test func resolver_encodingResolverOnly_throws() {
+        let style = ThemeAdaptiveStyle<Color>(resolver: .init(id: "test") { _ in .red })
+        #expect(throws: EncodingError.self) {
+            _ = try JSONEncoder().encode(style)
+        }
+    }
+
+    @Test func resolver_explicitId_isStable() {
+        let resolver1 = ThemeAdaptiveStyle<Color>.Resolver(id: "highContrast") { _ in .white }
+        let resolver2 = ThemeAdaptiveStyle<Color>.Resolver(id: "highContrast") { _ in .black }
+        #expect(resolver1 == resolver2)
+    }
+
+    @Test func resolver_autoId_isUnique() {
+        let resolver1 = ThemeAdaptiveStyle<Color>.Resolver { _ in .red }
+        let resolver2 = ThemeAdaptiveStyle<Color>.Resolver { _ in .red }
+        #expect(resolver1 != resolver2)
+    }
+
+    @Test func resolver_shapeStyleResolve_usesCustomResolver() {
+        let style = ThemeAdaptiveStyle<Color>(resolver: .init(id: "always-red") { _ in .red })
+        var lightEnv = EnvironmentValues()
+        lightEnv.colorScheme = .light
+        var darkEnv = EnvironmentValues()
+        darkEnv.colorScheme = .dark
+        // Custom resolver ignores colorScheme — returns red in both
+        let _ = style.resolve(in: lightEnv)
+        let _ = style.resolve(in: darkEnv)
     }
 }

@@ -17,7 +17,7 @@ nonisolated public struct ThemeShapeStyleGenerator: Sendable {
             }
 
             nonisolated public func resolve(in environment: EnvironmentValues) -> some ShapeStyle {
-                environment.theme[keyPath: keyPath].resolved(for: environment.colorScheme)
+                environment.theme[keyPath: keyPath].resolved(in: environment)
             }
         }
 

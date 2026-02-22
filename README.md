@@ -203,7 +203,7 @@ struct ThemeShapeStyle<Style: ShapeStyle>: ShapeStyle {
     let keyPath: KeyPath<Theme, ThemeAdaptiveStyle<Style>>
 
     func resolve(in environment: EnvironmentValues) -> some ShapeStyle {
-        environment.theme[keyPath: keyPath].resolved(for: environment.colorScheme)
+        environment.theme[keyPath: keyPath].resolved(in: environment)
     }
 }
 ```
