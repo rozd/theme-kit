@@ -2,16 +2,14 @@ import SwiftUI
 
 nonisolated public struct ThemeAdaptiveStyle<Style: Sendable & Codable & Equatable>: Sendable, Equatable {
 
-    public let light: Style?
-    public let dark: Style?
+    public let defaults: Defaults?
 
     public let resolver: Resolver
 
     nonisolated public init(
         resolver: Resolver,
     ) {
-        self.light = nil
-        self.dark = nil
+        self.defaults = nil
         self.resolver = resolver
     }
 
@@ -19,22 +17,55 @@ nonisolated public struct ThemeAdaptiveStyle<Style: Sendable & Codable & Equatab
         light: Style,
         dark: Style,
     ) {
-        self.light = light
-        self.dark = dark
-        self.resolver = Resolver(id: Self.resolverID(light: light, dark: dark)) { env in
-            env.colorScheme == .dark ? dark : light
-        }
+        let defaults = Defaults.colorScheme(light: light, dark: dark)
+        self.defaults = defaults
+        self.resolver = defaults.makeResolver()
     }
 
-    private static func resolverID(light: Style, dark: Style) -> String {
-        guard let data = try? JSONEncoder().encode([light, dark]) else {
-            return UUID().uuidString
-        }
-        var hasher = Hasher()
-        hasher.combine(data)
-        return String(hasher.finalize())
+    nonisolated public init(
+        compact: Style,
+        regular: Style,
+    ) {
+        let defaults = Defaults.sizeClass(compact: compact, regular: regular)
+        self.defaults = defaults
+        self.resolver = defaults.makeResolver()
+    }
+
+    nonisolated public init(
+        value: Style,
+    ) {
+        let defaults = Defaults.value(value)
+        self.defaults = defaults
+        self.resolver = defaults.makeResolver()
     }
 }
+
+// MARK: - Convenience accessors
+
+public extension ThemeAdaptiveStyle {
+
+    var light: Style? {
+        guard case .colorScheme(let light, _) = defaults else { return nil }
+        return light
+    }
+
+    var dark: Style? {
+        guard case .colorScheme(_, let dark) = defaults else { return nil }
+        return dark
+    }
+
+    var compact: Style? {
+        guard case .sizeClass(let compact, _) = defaults else { return nil }
+        return compact
+    }
+
+    var regular: Style? {
+        guard case .sizeClass(_, let regular) = defaults else { return nil }
+        return regular
+    }
+}
+
+// MARK: - resolved(in:)
 
 public extension ThemeAdaptiveStyle {
     nonisolated func resolved(in environment: EnvironmentValues) -> Style {
@@ -42,56 +73,23 @@ public extension ThemeAdaptiveStyle {
     }
 }
 
-// MARK: - Resolver
-
-nonisolated public extension ThemeAdaptiveStyle {
-
-    struct Resolver: Sendable {
-        public let id: String
-        public let resolve: @Sendable (EnvironmentValues) -> Style
-
-        public init(id: String, resolve: @escaping @Sendable (EnvironmentValues) -> Style) {
-            self.id = id
-            self.resolve = resolve
-        }
-
-        public init(resolve: @escaping @Sendable (EnvironmentValues) -> Style) {
-            self.init(id: UUID().uuidString, resolve: resolve)
-        }
-    }
-}
-
-nonisolated extension ThemeAdaptiveStyle.Resolver: Equatable {
-    public static func == (lhs: ThemeAdaptiveStyle<Style>.Resolver, rhs: ThemeAdaptiveStyle<Style>.Resolver) -> Bool {
-        lhs.id == rhs.id
-    }
-}
-
 // MARK: - Codable
 
 nonisolated extension ThemeAdaptiveStyle: Codable {
-    enum CodingKeys: String, CodingKey {
-        case light
-        case dark
-    }
 
     public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.init(
-            light: try container.decode(Style.self, forKey: .light),
-            dark: try container.decode(Style.self, forKey: .dark)
-        )
+        let defaults = try Defaults(from: decoder)
+        self.defaults = defaults
+        self.resolver = defaults.makeResolver()
     }
 
     public func encode(to encoder: Encoder) throws {
-        guard let light, let dark else {
+        guard let defaults else {
             throw EncodingError.invalidValue(self, .init(
                 codingPath: encoder.codingPath,
-                debugDescription: "Cannot encode ThemeAdaptiveStyle with a custom resolver — light/dark values are required for serialization."
+                debugDescription: "Cannot encode ThemeAdaptiveStyle with a custom resolver — defaults are required for serialization."
             ))
         }
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(light, forKey: .light)
-        try container.encode(dark, forKey: .dark)
+        try defaults.encode(to: encoder)
     }
 }

@@ -38,7 +38,7 @@ Tests/
 
 ### Core Types (ThemeKit target)
 
-- **`ThemeAdaptiveStyle<Style>`** — Generic wrapper holding `light`/`dark` variants, resolved via `ColorScheme`.
+- **`ThemeAdaptiveStyle<Style>`** — Generic wrapper that pairs optional `Defaults` (the serializable data) with a `Resolver` (a closure that reads `EnvironmentValues`). `Defaults` is a nested enum with three cases: `.colorScheme(light:dark:)`, `.sizeClass(compact:regular:)`, and `.value(_:)`. Each case knows how to create its own resolver. Styles created with a custom `Resolver` have `defaults = nil` and cannot be encoded. Convenience computed properties `.light`, `.dark`, `.compact`, `.regular` extract values from the matching `Defaults` case (returning `nil` for mismatched cases).
 - **Codable conformances** — `Color`, `Gradient`, etc. get `Codable` conformance (via `@retroactive`) for remote/serialized theming.
 
 ### Generated Types (NOT in the package — produced per app)
@@ -84,7 +84,8 @@ A Svelte SPA at `.github/pages/` that lets users build `theme.json` visually ins
 
 - All types are `nonisolated`, `Sendable`, and `Codable`
 - Style resolution goes through SwiftUI's `resolve(in: EnvironmentValues)` — never requires `@Environment` in views
-- Every token must have both light and dark variants (no optionals/fallbacks)
+- Tokens adapt by axis: colorScheme (light/dark), sizeClass (compact/regular), or constant value — the `Defaults` enum case determines which
+- Codable auto-detects format by JSON keys: `{"light","dark"}` → colorScheme, `{"compact","regular"}` → sizeClass, plain value → value
 - `copyWith` pattern enables immutable theme updates at runtime
 - Generated `ShapeStyle` extensions constrain `Self` to `ThemeShapeStyle<ConcreteType>`
 - Shadow tokens also generate unconstrained instance properties on `ShapeStyle` for composition — static and instance properties coexist without conflict

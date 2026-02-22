@@ -235,4 +235,166 @@ struct ThemeAdaptiveStyleTests {
         let _ = style.resolve(in: lightEnv)
         let _ = style.resolve(in: darkEnv)
     }
+
+    // MARK: - init(value:)
+
+    @Test func initValue_storesValueDefaults() {
+        let style = ThemeAdaptiveStyle(value: Color(hex: 0xFF0000))
+        #expect(style.defaults == .value(Color(hex: 0xFF0000)))
+    }
+
+    @Test func initValue_resolvesSameInAllEnvironments() throws {
+        let style = ThemeAdaptiveStyle(value: Color(hex: 0xFF0000))
+        var lightEnv = EnvironmentValues()
+        lightEnv.colorScheme = .light
+        var darkEnv = EnvironmentValues()
+        darkEnv.colorScheme = .dark
+        #expect(try style.resolved(in: lightEnv).hexString == "#FF0000")
+        #expect(try style.resolved(in: darkEnv).hexString == "#FF0000")
+    }
+
+    // MARK: - init(compact:regular:)
+
+    @Test func initSizeClass_storesSizeClassDefaults() {
+        let style = ThemeAdaptiveStyle(compact: Color(hex: 0xFF0000), regular: Color(hex: 0x0000FF))
+        #expect(style.compact == Color(hex: 0xFF0000))
+        #expect(style.regular == Color(hex: 0x0000FF))
+    }
+
+    @Test func initSizeClass_resolvesCompactWhenCompact() throws {
+        let style = ThemeAdaptiveStyle(compact: Color(hex: 0xFF0000), regular: Color(hex: 0x0000FF))
+        var env = EnvironmentValues()
+        env.horizontalSizeClass = .compact
+        #expect(try style.resolved(in: env).hexString == "#FF0000")
+    }
+
+    @Test func initSizeClass_resolvesRegularWhenRegular() throws {
+        let style = ThemeAdaptiveStyle(compact: Color(hex: 0xFF0000), regular: Color(hex: 0x0000FF))
+        var env = EnvironmentValues()
+        env.horizontalSizeClass = .regular
+        #expect(try style.resolved(in: env).hexString == "#0000FF")
+    }
+
+    @Test func initSizeClass_nilFallsBackToRegular() throws {
+        let style = ThemeAdaptiveStyle(compact: Color(hex: 0xFF0000), regular: Color(hex: 0x0000FF))
+        // Default EnvironmentValues has horizontalSizeClass == nil
+        let env = EnvironmentValues()
+        #expect(try style.resolved(in: env).hexString == "#0000FF")
+    }
+
+    // MARK: - Computed property cross-checks
+
+    @Test func colorSchemeStyle_returnsNilForSizeClassAccessors() {
+        let style = ThemeAdaptiveStyle(light: Color(hex: 0xFF0000), dark: Color(hex: 0x0000FF))
+        #expect(style.compact == nil)
+        #expect(style.regular == nil)
+    }
+
+    @Test func sizeClassStyle_returnsNilForColorSchemeAccessors() {
+        let style = ThemeAdaptiveStyle(compact: Color(hex: 0xFF0000), regular: Color(hex: 0x0000FF))
+        #expect(style.light == nil)
+        #expect(style.dark == nil)
+    }
+
+    @Test func resolverOnly_returnsNilForAllAccessors() {
+        let style = ThemeAdaptiveStyle<Color>(resolver: .init(id: "test") { _ in .red })
+        #expect(style.light == nil)
+        #expect(style.dark == nil)
+        #expect(style.compact == nil)
+        #expect(style.regular == nil)
+    }
+
+    // MARK: - Codable round-trip (sizeClass)
+
+    @Test func codableRoundTrip_sizeClass() throws {
+        let original = ThemeAdaptiveStyle(compact: Color(hex: 0xFF0000), regular: Color(hex: 0x0000FF))
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(ThemeAdaptiveStyle<Color>.self, from: data)
+        #expect(decoded.compact == Color(hex: 0xFF0000))
+        #expect(decoded.regular == Color(hex: 0x0000FF))
+    }
+
+    @Test func codableRoundTrip_sizeClass_jsonStructure() throws {
+        let original = ThemeAdaptiveStyle(compact: Color(hex: 0xFF0000), regular: Color(hex: 0x0000FF))
+        let data = try JSONEncoder().encode(original)
+        let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: String])
+        #expect(json["compact"] == "#FF0000")
+        #expect(json["regular"] == "#0000FF")
+    }
+
+    @Test func codableRoundTrip_sizeClass_preservesEquality() throws {
+        let original = ThemeAdaptiveStyle(compact: Color(hex: 0xFF0000), regular: Color(hex: 0x0000FF))
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(ThemeAdaptiveStyle<Color>.self, from: data)
+        #expect(original == decoded)
+    }
+
+    // MARK: - Codable round-trip (value)
+
+    @Test func codableRoundTrip_value() throws {
+        let original = ThemeAdaptiveStyle(value: Color(hex: 0xFF0000))
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(ThemeAdaptiveStyle<Color>.self, from: data)
+        #expect(decoded.defaults == .value(Color(hex: 0xFF0000)))
+    }
+
+    @Test func codableRoundTrip_value_jsonStructure() throws {
+        let original = ThemeAdaptiveStyle(value: Color(hex: 0xFF0000))
+        let data = try JSONEncoder().encode(original)
+        let json = try #require(String(data: data, encoding: .utf8))
+        #expect(json == "\"#FF0000\"")
+    }
+
+    @Test func codableRoundTrip_value_preservesEquality() throws {
+        let original = ThemeAdaptiveStyle(value: Color(hex: 0xFF0000))
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(ThemeAdaptiveStyle<Color>.self, from: data)
+        #expect(original == decoded)
+    }
+
+    // MARK: - Decode from raw JSON (sizeClass & value)
+
+    @Test func decode_sizeClass_fromRawJSON() throws {
+        let json = Data("""
+        {"compact": "#FF0000", "regular": "#0000FF"}
+        """.utf8)
+        let decoded = try JSONDecoder().decode(ThemeAdaptiveStyle<Color>.self, from: json)
+        #expect(decoded.compact == Color(hex: 0xFF0000))
+        #expect(decoded.regular == Color(hex: 0x0000FF))
+    }
+
+    @Test func decode_value_fromRawJSON() throws {
+        let json = Data("\"#FF0000\"".utf8)
+        let decoded = try JSONDecoder().decode(ThemeAdaptiveStyle<Color>.self, from: json)
+        #expect(decoded.defaults == .value(Color(hex: 0xFF0000)))
+    }
+
+    // MARK: - Equality across forms
+
+    @Test func equality_sameColorScheme_areEqual() {
+        let a = ThemeAdaptiveStyle(light: Color(hex: 0xFF0000), dark: Color(hex: 0x0000FF))
+        let b = ThemeAdaptiveStyle(light: Color(hex: 0xFF0000), dark: Color(hex: 0x0000FF))
+        #expect(a == b)
+    }
+
+    @Test func equality_sameSizeClass_areEqual() {
+        let a = ThemeAdaptiveStyle(compact: Color(hex: 0xFF0000), regular: Color(hex: 0x0000FF))
+        let b = ThemeAdaptiveStyle(compact: Color(hex: 0xFF0000), regular: Color(hex: 0x0000FF))
+        #expect(a == b)
+    }
+
+    @Test func equality_sameValue_areEqual() {
+        let a = ThemeAdaptiveStyle(value: Color(hex: 0xFF0000))
+        let b = ThemeAdaptiveStyle(value: Color(hex: 0xFF0000))
+        #expect(a == b)
+    }
+
+    @Test func equality_differentForms_areNotEqual() {
+        let colorScheme = ThemeAdaptiveStyle(light: Color(hex: 0xFF0000), dark: Color(hex: 0x0000FF))
+        let sizeClass = ThemeAdaptiveStyle(compact: Color(hex: 0xFF0000), regular: Color(hex: 0x0000FF))
+        let value = ThemeAdaptiveStyle(value: Color(hex: 0xFF0000))
+        #expect(colorScheme != sizeClass)
+        #expect(colorScheme != value)
+        #expect(sizeClass != value)
+    }
 }
