@@ -55,11 +55,17 @@ Only include the categories you need — the generated `Theme` struct will match
     "gradients": [
         { "name": "primary", "style": "primaryGradient" }
     ]
+  },
+  "config": {
+    "outputPath": ".",
+    "shouldGeneratePreview": true
   }
 }
 ```
 
 > Use the object form `{ "name": ..., "style": ... }` when a token name conflicts with a SwiftUI built-in (e.g. `primary` → `primaryColor`).
+>
+> Set `"shouldGeneratePreview": true` in the config section to generate a `Theme+Preview.swift` file with a SwiftUI view that displays all your tokens as a visual palette.
 
 ### 3. Generate theme files
 
@@ -75,6 +81,7 @@ Right-click your project in the Xcode navigator → **Generate Theme Files**.
 - `Environment+Theme.swift` for environment plumbing
 - `copyWith` helpers for immutable updates
 - A `Theme+Defaults.swift` scaffold for you to fill in
+- A `Theme+Preview.swift` file with a visual preview of all tokens (only when `shouldGeneratePreview` is enabled)
 
 </details>
 
