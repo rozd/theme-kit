@@ -332,4 +332,74 @@ struct ThemeFileGeneratorTests {
         let gradientsExt = try #require(files.first { $0.name == "ShapeStyle+ThemeGradients.swift" })
         #expect(!gradientsExt.content.contains("ThemeShadowedStyle"))
     }
+
+    // MARK: - Preview generation
+
+    @Test func shouldGeneratePreview_false_doesNotGeneratePreviewFile() throws {
+        let jsonWithoutPreview = Data("""
+        {
+            "styles": {
+                "colors": ["surface"]
+            },
+            "config": {
+                "outputPath": ".",
+                "shouldGeneratePreview": false
+            }
+        }
+        """.utf8)
+
+        let files = try ThemeFileGenerator().generate(fromJSON: jsonWithoutPreview).files
+        let names = Set(files.map(\.name))
+
+        #expect(!names.contains("Theme+Preview.swift"))
+    }
+
+    @Test func shouldGeneratePreview_true_generatesPreviewFile() throws {
+        let jsonWithPreview = Data("""
+        {
+            "styles": {
+                "colors": ["surface", "primary"]
+            },
+            "config": {
+                "outputPath": ".",
+                "shouldGeneratePreview": true
+            }
+        }
+        """.utf8)
+
+        let files = try ThemeFileGenerator().generate(fromJSON: jsonWithPreview).files
+        let names = Set(files.map(\.name))
+
+        #expect(names.contains("Theme+Preview.swift"))
+    }
+
+    @Test func shouldGeneratePreview_omitted_doesNotGeneratePreviewFile() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: colorsOnlyJSON).files
+        let names = Set(files.map(\.name))
+
+        #expect(!names.contains("Theme+Preview.swift"))
+    }
+
+    @Test func previewFile_containsCorrectStructure() throws {
+        let jsonWithPreview = Data("""
+        {
+            "styles": {
+                "colors": ["surface"],
+                "gradients": ["primary"]
+            },
+            "config": {
+                "outputPath": ".",
+                "shouldGeneratePreview": true
+            }
+        }
+        """.utf8)
+
+        let files = try ThemeFileGenerator().generate(fromJSON: jsonWithPreview).files
+        let previewFile = try #require(files.first { $0.name == "Theme+Preview.swift" })
+
+        #expect(previewFile.content.contains("public struct ThemePreview: View"))
+        #expect(previewFile.content.contains("#Preview"))
+        #expect(previewFile.content.contains("// MARK: - Colors"))
+        #expect(previewFile.content.contains("// MARK: - Gradients"))
+    }
 }

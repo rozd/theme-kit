@@ -39,7 +39,13 @@ nonisolated public struct ThemeFileGenerator: Sendable {
 
     nonisolated public func generate(fromJSON data: Data) throws -> (files: [GeneratedFile], outputPath: String) {
         let themeFile = try JSONDecoder().decode(ThemeFile.self, from: data)
-        let files = generate(from: themeFile.styles)
+        var files = generate(from: themeFile.styles)
+
+        // Conditionally add preview file
+        if themeFile.shouldGeneratePreview {
+            files.append(ThemePreviewGenerator().generate(from: themeFile.styles))
+        }
+
         return (files, themeFile.resolvedOutputPath)
     }
 }
