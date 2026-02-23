@@ -151,4 +151,16 @@ struct ThemePreviewGeneratorTests {
         let file = ThemePreviewGenerator().generate(from: colorsOnlyConfig)
         #expect(file.content.contains("VStack(alignment: .leading, spacing:"))
     }
+
+    @Test func emptyConfig_generatesValidPreviewWithNoSections() {
+        let config = ThemeConfig()
+        let file = ThemePreviewGenerator().generate(from: config)
+
+        #expect(file.name == "Theme+Preview.swift")
+        #expect(file.content.contains("public struct ThemePreview: View"))
+        #expect(file.content.contains("ScrollView"))
+        #expect(!file.content.contains("// MARK: - Colors"))
+        #expect(!file.content.contains("// MARK: - Gradients"))
+        #expect(!file.content.contains("// MARK: - Shadows"))
+    }
 }
