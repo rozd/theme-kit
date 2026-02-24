@@ -34,6 +34,10 @@
         "outputPath": {
           "type": "string",
           "description": "Relative path from the generation root where generated files should be written (e.g., 'UI/Theme'). Defaults to '.' if not specified."
+        },
+        "shouldGeneratePreview": {
+          "type": "boolean",
+          "description": "When true, generates a Theme+Preview.swift file containing a SwiftUI view that renders all tokens as a visual palette. Defaults to false if not specified."
         }
       },
       "required": ["outputPath"],

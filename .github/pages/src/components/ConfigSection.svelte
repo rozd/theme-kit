@@ -9,19 +9,31 @@
     <h2>Configuration</h2>
     <div class="config-fields">
       {#each properties as prop}
+        {#if prop.type === 'boolean'}
+          <div class="config-field config-field-bool">
+            <div>
+              <label for="config-{prop.key}">{prop.key}</label>
+              {#if prop.description}
+                <p class="config-field-desc">{prop.description}</p>
+              {/if}
+            </div>
+            <label class="toggle">
+              <input
+                id="config-{prop.key}"
+                type="checkbox"
+                checked={getConfig(prop.key) ?? false}
+                onchange={(e) => setConfig(prop.key, e.target.checked)}
+              />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        {:else}
         <div class="config-field">
           <label for="config-{prop.key}">
             {prop.key}
             {#if prop.required}<span class="required">*</span>{/if}
           </label>
-          {#if prop.type === 'boolean'}
-            <input
-              id="config-{prop.key}"
-              type="checkbox"
-              checked={getConfig(prop.key) ?? false}
-              onchange={(e) => setConfig(prop.key, e.target.checked)}
-            />
-          {:else if prop.type === 'number'}
+          {#if prop.type === 'number'}
             <input
               id="config-{prop.key}"
               type="number"
@@ -39,6 +51,7 @@
             />
           {/if}
         </div>
+        {/if}
       {/each}
     </div>
   </section>

@@ -193,6 +193,18 @@ section h2 {
   color: var(--color-danger);
 }
 
+.config-field-bool {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.config-field-desc {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 0.15rem;
+}
+
 .config-field input[type='text'],
 .config-field input[type='number'] {
   padding: 0.5rem 0.65rem;

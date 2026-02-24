@@ -25,9 +25,12 @@ const jsonOutput = $derived.by(() => {
     obj.styles = stylesObj;
   }
 
-  // Build config — only include if it has properties
-  if (Object.keys(config).length > 0) {
-    obj.config = { ...config };
+  // Build config — omit default/empty values (false booleans, empty strings)
+  const configCopy = Object.fromEntries(
+    Object.entries(config).filter(([_, v]) => v !== false && v !== '')
+  );
+  if (Object.keys(configCopy).length > 0) {
+    obj.config = configCopy;
   }
 
   return JSON.stringify(obj, null, 2);

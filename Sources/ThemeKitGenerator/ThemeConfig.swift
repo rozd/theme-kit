@@ -13,8 +13,12 @@ nonisolated public struct ThemeFile: Sendable, Codable, Equatable {
         /// Relative path from the generation root where generated files should be written.
         public let outputPath: String
 
-        nonisolated public init(outputPath: String) {
+        /// When true, generates a Theme+Preview.swift file containing a SwiftUI preview view.
+        public let shouldGeneratePreview: Bool?
+
+        nonisolated public init(outputPath: String, shouldGeneratePreview: Bool? = nil) {
             self.outputPath = outputPath
+            self.shouldGeneratePreview = shouldGeneratePreview
         }
     }
 
@@ -26,6 +30,11 @@ nonisolated public struct ThemeFile: Sendable, Codable, Equatable {
     /// The resolved output path, defaulting to "." if no config is present.
     nonisolated public var resolvedOutputPath: String {
         config?.outputPath ?? "."
+    }
+
+    /// Whether to generate a preview file, defaulting to false.
+    nonisolated public var shouldGeneratePreview: Bool {
+        config?.shouldGeneratePreview ?? false
     }
 }
 
