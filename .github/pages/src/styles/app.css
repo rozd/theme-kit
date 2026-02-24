@@ -199,6 +199,10 @@ section h2 {
   justify-content: space-between;
 }
 
+.config-field-bool .toggle {
+  flex-shrink: 0;
+}
+
 .config-field-desc {
   font-size: 0.75rem;
   color: var(--color-text-muted);

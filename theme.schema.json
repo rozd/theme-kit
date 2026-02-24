@@ -37,7 +37,7 @@
         },
         "shouldGeneratePreview": {
           "type": "boolean",
-          "description": "When true, generates a Theme+Preview.swift file containing a SwiftUI view that renders all tokens as a visual palette. Defaults to false if not specified."
+          "description": "To generate a Theme+Preview.swift with all tokens as visual palette."
         }
       },
       "required": ["outputPath"],
