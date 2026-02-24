@@ -15,6 +15,7 @@ struct ThemePreviewGeneratorTests {
     let fullConfig = ThemeConfig(
         colors: [ThemeToken(name: "surface", style: "surface")],
         gradients: [ThemeToken(name: "primary", style: "primary")],
+        meshGradients: [ThemeToken(name: "aurora", style: "aurora")],
         shadows: [ThemeToken(name: "card", style: "cardShadow")]
     )
 
@@ -115,6 +116,26 @@ struct ThemePreviewGeneratorTests {
         #expect(!file.content.contains("ShadowCard"))
     }
 
+    // MARK: - Mesh Gradients section
+
+    @Test func meshGradientsPresent_includesMeshGradientsSection() {
+        let file = ThemePreviewGenerator().generate(from: fullConfig)
+        #expect(file.content.contains("// MARK: - Mesh Gradients"))
+        #expect(file.content.contains("Text(\"Mesh Gradients\")"))
+        #expect(file.content.contains("MeshGradientCard"))
+    }
+
+    @Test func meshGradientsPresent_includesAllMeshGradientTokens() {
+        let file = ThemePreviewGenerator().generate(from: fullConfig)
+        #expect(file.content.contains("MeshGradientCard(name: \"aurora\", style: .aurora)"))
+    }
+
+    @Test func meshGradientsAbsent_excludesMeshGradientsSection() {
+        let file = ThemePreviewGenerator().generate(from: colorsOnlyConfig)
+        #expect(!file.content.contains("// MARK: - Mesh Gradients"))
+        #expect(!file.content.contains("MeshGradientCard"))
+    }
+
     // MARK: - Preview components
 
     @Test func generate_includesColorSwatchComponent() {
@@ -132,6 +153,12 @@ struct ThemePreviewGeneratorTests {
         let config = ThemeConfig(shadows: [ThemeToken(name: "card", style: "card")])
         let file = ThemePreviewGenerator().generate(from: config)
         #expect(file.content.contains("private struct ShadowCard<Style: ShapeStyle>: View"))
+    }
+
+    @Test func generate_includesMeshGradientCardComponent() {
+        let config = ThemeConfig(meshGradients: [ThemeToken(name: "aurora", style: "aurora")])
+        let file = ThemePreviewGenerator().generate(from: config)
+        #expect(file.content.contains("private struct MeshGradientCard<Style: ShapeStyle>: View"))
     }
 
     // MARK: - Layout structure
@@ -155,6 +182,7 @@ struct ThemePreviewGeneratorTests {
         #expect(file.content.contains("ScrollView"))
         #expect(!file.content.contains("// MARK: - Colors"))
         #expect(!file.content.contains("// MARK: - Gradients"))
+        #expect(!file.content.contains("// MARK: - Mesh Gradients"))
         #expect(!file.content.contains("// MARK: - Shadows"))
     }
 }

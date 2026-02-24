@@ -50,6 +50,16 @@ nonisolated public struct DefaultsGenerator: Sendable {
                         )
                 """
             }.joined(separator: ",\n")
+        case .meshGradients:
+            tokenLines = tokens.map { token in
+                let padding = String(repeating: " ", count: maxNameLength - token.name.count)
+                return """
+                        \(token.name):\(padding) .init(
+                            light: .init(width: 2, height: 2, colors: [<#color#>, <#color#>, <#color#>, <#color#>]),
+                            dark:  .init(width: 2, height: 2, colors: [<#color#>, <#color#>, <#color#>, <#color#>])
+                        )
+                """
+            }.joined(separator: ",\n")
         default:
             tokenLines = tokens.map { token in
                 let padding = String(repeating: " ", count: maxNameLength - token.name.count)

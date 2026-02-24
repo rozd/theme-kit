@@ -6,7 +6,7 @@
   "type": "object",
   "properties": {
     "styles": {
-      "description": "Style token definitions for colors, gradients, and shadows.",
+      "description": "Style token definitions for colors, gradients, mesh gradients, and shadows.",
       "type": "object",
       "properties": {
         "colors": {
@@ -16,6 +16,11 @@
         },
         "gradients": {
           "description": "Gradient style tokens (resolved as ThemeAdaptiveStyle<Gradient>).",
+          "type": "array",
+          "items": { "$ref": "#/$defs/tokenEntry" }
+        },
+        "meshGradients": {
+          "description": "Mesh gradient style tokens (resolved as ThemeAdaptiveStyle<MeshGradient>).",
           "type": "array",
           "items": { "$ref": "#/$defs/tokenEntry" }
         },

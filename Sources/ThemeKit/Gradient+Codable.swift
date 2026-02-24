@@ -1,8 +1,8 @@
 import SwiftUI
 
-extension Gradient: @retroactive Codable {
+nonisolated extension Gradient: @retroactive Codable {
 
-    nonisolated public init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         if let colors = try? container.decode([Color].self) {
             self = .init(colors: colors)
@@ -21,7 +21,7 @@ extension Gradient: @retroactive Codable {
         }
     }
 
-    nonisolated public func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         if hasUniformStops {
             try container.encode(stops.map { $0.color })
@@ -33,7 +33,7 @@ extension Gradient: @retroactive Codable {
         }
     }
 
-    nonisolated private var hasUniformStops: Bool {
+    private var hasUniformStops: Bool {
         let count = stops.count
         guard count > 1 else { return true }
         for (i, stop) in stops.enumerated() {

@@ -30,6 +30,14 @@ struct ThemeFileGeneratorTests {
     }
     """.utf8)
 
+    let meshGradientsOnlyJSON = Data("""
+    {
+        "styles": {
+            "meshGradients": ["aurora", {"name": "sunset", "style": "sunsetMesh"}]
+        }
+    }
+    """.utf8)
+
     let fullWithShadowsJSON = Data("""
     {
         "styles": {
@@ -331,6 +339,49 @@ struct ThemeFileGeneratorTests {
 
         let gradientsExt = try #require(files.first { $0.name == "ShapeStyle+ThemeGradients.swift" })
         #expect(!gradientsExt.content.contains("ThemeShadowedStyle"))
+    }
+
+    // MARK: - Mesh gradients
+
+    @Test func meshGradientsOnly_generatesExpectedFiles() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: meshGradientsOnlyJSON).files
+        let names = Set(files.map(\.name))
+
+        #expect(names.contains("ThemeShapeStyle.swift"))
+        #expect(names.contains("Environment+Theme.swift"))
+        #expect(names.contains("Theme.swift"))
+        #expect(names.contains("Theme+CopyWith.swift"))
+        #expect(names.contains("ThemeMeshGradients.swift"))
+        #expect(names.contains("ThemeMeshGradients+CopyWith.swift"))
+        #expect(names.contains("ShapeStyle+ThemeMeshGradients.swift"))
+        #expect(names.contains("Theme+Defaults.swift"))
+        #expect(files.count == 8)
+    }
+
+    @Test func meshGradientsCategoryStruct_containsTokenProperties() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: meshGradientsOnlyJSON).files
+        let file = try #require(files.first { $0.name == "ThemeMeshGradients.swift" })
+
+        #expect(file.content.contains("let aurora: ThemeAdaptiveStyle<MeshGradient>"))
+        #expect(file.content.contains("let sunset: ThemeAdaptiveStyle<MeshGradient>"))
+        #expect(file.content.contains("struct ThemeMeshGradients"))
+    }
+
+    @Test func meshGradientsShapeStyleExtension_constrainsToCorrectType() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: meshGradientsOnlyJSON).files
+        let ext = try #require(files.first { $0.name == "ShapeStyle+ThemeMeshGradients.swift" })
+
+        #expect(ext.content.contains("ThemeShapeStyle<MeshGradient>"))
+        #expect(ext.content.contains("static var aurora: Self"))
+        #expect(ext.content.contains("static var sunsetMesh: Self"))
+    }
+
+    @Test func meshGradientsDefaults_usesMultilineFormat() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: meshGradientsOnlyJSON).files
+        let defaults = try #require(files.first { $0.name == "Theme+Defaults.swift" })
+
+        #expect(defaults.content.contains("light: .init(width: 2, height: 2, colors: [<#color#>, <#color#>, <#color#>, <#color#>])"))
+        #expect(defaults.content.contains("dark:  .init(width: 2, height: 2, colors: [<#color#>, <#color#>, <#color#>, <#color#>])"))
     }
 
     // MARK: - Preview generation

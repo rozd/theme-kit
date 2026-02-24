@@ -12,12 +12,14 @@ struct ThemeConfigTests {
         {
             "colors": ["surface", {"name": "primary", "style": "primaryColor"}],
             "gradients": ["primary"],
+            "meshGradients": ["aurora"],
             "shadows": ["card"]
         }
         """.utf8)
         let config = try JSONDecoder().decode(ThemeConfig.self, from: json)
         #expect(config.colors?.count == 2)
         #expect(config.gradients?.count == 1)
+        #expect(config.meshGradients?.count == 1)
         #expect(config.shadows?.count == 1)
     }
 
@@ -38,22 +40,25 @@ struct ThemeConfigTests {
         let config = try JSONDecoder().decode(ThemeConfig.self, from: json)
         #expect(config.colors == nil)
         #expect(config.gradients == nil)
+        #expect(config.meshGradients == nil)
         #expect(config.shadows == nil)
     }
 
     // MARK: - Categories computed property
 
-    @Test func categories_fullConfig_returnsAllThree() throws {
+    @Test func categories_fullConfig_returnsAll() throws {
         let config = ThemeConfig(
             colors: [ThemeToken(name: "surface", style: "surface")],
             gradients: [ThemeToken(name: "primary", style: "primary")],
+            meshGradients: [ThemeToken(name: "aurora", style: "aurora")],
             shadows: [ThemeToken(name: "card", style: "card")]
         )
         let categories = config.categories
-        #expect(categories.count == 3)
+        #expect(categories.count == 4)
         #expect(categories[0] == .colors)
         #expect(categories[1] == .gradients)
-        #expect(categories[2] == .shadows)
+        #expect(categories[2] == .meshGradients)
+        #expect(categories[3] == .shadows)
     }
 
     @Test func categories_colorsOnly() {
@@ -84,5 +89,14 @@ struct ThemeConfigTests {
         let categories = config.categories
         #expect(categories.count == 1)
         #expect(categories[0] == .gradients)
+    }
+
+    @Test func categories_meshGradientsOnly() {
+        let config = ThemeConfig(
+            meshGradients: [ThemeToken(name: "aurora", style: "aurora")]
+        )
+        let categories = config.categories
+        #expect(categories.count == 1)
+        #expect(categories[0] == .meshGradients)
     }
 }
