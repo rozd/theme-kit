@@ -49,7 +49,13 @@ nonisolated extension MeshGradient: @retroactive Codable {
         case .resolvedColors(let colors):
             try container.encode(colors, forKey: .colors)
         @unknown default:
-            break
+            throw EncodingError.invalidValue(
+                colors,
+                EncodingError.Context(
+                    codingPath: [CodingKeys.colors],
+                    debugDescription: "Unsupported color type",
+                )
+            )
         }
 
         switch locations {
@@ -58,17 +64,29 @@ nonisolated extension MeshGradient: @retroactive Codable {
         case .bezierPoints(let points):
             try container.encode(points.map(\.position), forKey: .points)
         @unknown default:
-            break
+            throw EncodingError.invalidValue(
+                locations,
+                EncodingError.Context(
+                    codingPath: [CodingKeys.points],
+                    debugDescription: "Unsupported location type",
+                )
+            )
         }
 
     }
 
     static func pointsFrom(width: Int, height: Int) -> [SIMD2<Float>] {
-        (0..<height).flatMap { row in
+        guard width > 0, height > 0 else {
+            return []
+        }
+        if width == 1 && height == 1 {
+            return [SIMD2<Float>(0.5, 0.5)]
+        }
+        return (0..<height).flatMap { row in
             (0..<width).map { col in
                 SIMD2<Float>(
-                    Float(col) / Float(width - 1),
-                    Float(row) / Float(height - 1)
+                    width > 1 ? Float(col) / Float(width - 1) : 0.5,
+                    height > 1 ? Float(row) / Float(height - 1) : 0.5,
                 )
             }
         }
