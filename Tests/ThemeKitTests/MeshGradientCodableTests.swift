@@ -386,5 +386,31 @@ struct MeshGradientCodableTests {
         // the implementation divides by (width-1) which is 0. Verify behavior.
         let points = MeshGradient.pointsFrom(width: 1, height: 1)
         #expect(points.count == 1)
+        let point = points[0]
+        // The single point should be at the origin and have finite coordinates.
+        #expect(point == SIMD2<Float>(0.0, 0.0))
+        #expect(point.x.isFinite && point.y.isFinite)
+    }
+
+    // MARK: - Invalid dimension handling
+
+    @Test func convenienceInit_zeroWidth_returnsEmptyPointGrid() {
+        let points = MeshGradient.pointsFrom(width: 0, height: 3)
+        #expect(points.isEmpty)
+    }
+
+    @Test func convenienceInit_zeroHeight_returnsEmptyPointGrid() {
+        let points = MeshGradient.pointsFrom(width: 3, height: 0)
+        #expect(points.isEmpty)
+    }
+
+    @Test func convenienceInit_negativeWidth_returnsEmptyPointGrid() {
+        let points = MeshGradient.pointsFrom(width: -1, height: 3)
+        #expect(points.isEmpty)
+    }
+
+    @Test func convenienceInit_negativeHeight_returnsEmptyPointGrid() {
+        let points = MeshGradient.pointsFrom(width: 3, height: -1)
+        #expect(points.isEmpty)
     }
 }
