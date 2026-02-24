@@ -42,15 +42,9 @@ struct ThemePreviewGeneratorTests {
         #expect(file.content.contains("public var body: some View"))
     }
 
-    @Test func generate_containsEnvironmentTheme() {
+    @Test func generate_doesNotContainEnvironmentProperties() {
         let file = ThemePreviewGenerator().generate(from: colorsOnlyConfig)
-        #expect(file.content.contains("@Environment(\\.theme) var theme"))
-        #expect(file.content.contains("@Environment(\\.self) var environment"))
-    }
-
-    @Test func generate_containsPublicInit() {
-        let file = ThemePreviewGenerator().generate(from: colorsOnlyConfig)
-        #expect(file.content.contains("public init() {}"))
+        #expect(!file.content.contains("@Environment"))
     }
 
     @Test func generate_containsPreviewMacro() {
@@ -70,8 +64,8 @@ struct ThemePreviewGeneratorTests {
 
     @Test func colorsPresent_includesAllColorTokens() {
         let file = ThemePreviewGenerator().generate(from: colorsOnlyConfig)
-        #expect(file.content.contains("ColorSwatch(name: \"surface\", color: theme.colors.surface.resolved(in: environment))"))
-        #expect(file.content.contains("ColorSwatch(name: \"primary\", color: theme.colors.primary.resolved(in: environment))"))
+        #expect(file.content.contains("ColorSwatch(name: \"surface\", style: .surface)"))
+        #expect(file.content.contains("ColorSwatch(name: \"primary\", style: .primaryColor)"))
     }
 
     @Test func colorsAbsent_excludesColorsSection() {
@@ -92,7 +86,7 @@ struct ThemePreviewGeneratorTests {
 
     @Test func gradientsPresent_includesAllGradientTokens() {
         let file = ThemePreviewGenerator().generate(from: fullConfig)
-        #expect(file.content.contains("GradientStrip(name: \"primary\", gradient: theme.gradients.primary.resolved(in: environment))"))
+        #expect(file.content.contains("GradientStrip(name: \"primary\", style: .primary)"))
     }
 
     @Test func gradientsAbsent_excludesGradientsSection() {
@@ -112,7 +106,7 @@ struct ThemePreviewGeneratorTests {
 
     @Test func shadowsPresent_includesAllShadowTokens() {
         let file = ThemePreviewGenerator().generate(from: fullConfig)
-        #expect(file.content.contains("ShadowCard(name: \"card\", shadow: theme.shadows.card.resolved(in: environment))"))
+        #expect(file.content.contains("ShadowCard(name: \"card\", style: .background.cardShadow)"))
     }
 
     @Test func shadowsAbsent_excludesShadowsSection() {
@@ -125,19 +119,19 @@ struct ThemePreviewGeneratorTests {
 
     @Test func generate_includesColorSwatchComponent() {
         let file = ThemePreviewGenerator().generate(from: colorsOnlyConfig)
-        #expect(file.content.contains("private struct ColorSwatch: View"))
+        #expect(file.content.contains("private struct ColorSwatch<Style: ShapeStyle>: View"))
     }
 
     @Test func generate_includesGradientStripComponent() {
         let config = ThemeConfig(gradients: [ThemeToken(name: "primary", style: "primary")])
         let file = ThemePreviewGenerator().generate(from: config)
-        #expect(file.content.contains("private struct GradientStrip: View"))
+        #expect(file.content.contains("private struct GradientStrip<Style: ShapeStyle>: View"))
     }
 
     @Test func generate_includesShadowCardComponent() {
         let config = ThemeConfig(shadows: [ThemeToken(name: "card", style: "card")])
         let file = ThemePreviewGenerator().generate(from: config)
-        #expect(file.content.contains("private struct ShadowCard: View"))
+        #expect(file.content.contains("private struct ShadowCard<Style: ShapeStyle>: View"))
     }
 
     // MARK: - Layout structure
