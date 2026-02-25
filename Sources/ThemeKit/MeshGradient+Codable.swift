@@ -80,13 +80,13 @@ nonisolated extension MeshGradient: @retroactive Codable {
             return []
         }
         if width == 1 && height == 1 {
-            return [SIMD2<Float>(0.5, 0.5)]
+            return [SIMD2<Float>(0.0, 0.0)]
         }
         return (0..<height).flatMap { row in
             (0..<width).map { col in
                 SIMD2<Float>(
-                    width > 1 ? Float(col) / Float(width - 1) : 0.5,
-                    height > 1 ? Float(row) / Float(height - 1) : 0.5,
+                    width > 1 ? Float(col) / Float(width - 1) : 0.0,
+                    height > 1 ? Float(row) / Float(height - 1) : 0.0,
                 )
             }
         }

@@ -2,7 +2,7 @@ import Foundation
 
 /// Root structure of a theme.json file.
 nonisolated public struct ThemeFile: Sendable, Codable, Equatable {
-    /// Style token definitions (colors, gradients, shadows).
+    /// Style token definitions (colors, gradients, mesh gradients, shadows).
     public let styles: ThemeConfig
 
     /// Generation configuration (output path, etc.).
