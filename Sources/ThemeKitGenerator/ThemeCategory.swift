@@ -1,12 +1,14 @@
 nonisolated public enum ThemeCategory: CaseIterable, Sendable {
     case colors
     case gradients
+    case meshGradients
     case shadows
 
     nonisolated public var structName: String {
         switch self {
         case .colors: "ThemeColors"
         case .gradients: "ThemeGradients"
+        case .meshGradients: "ThemeMeshGradients"
         case .shadows: "ThemeShadows"
         }
     }
@@ -15,6 +17,7 @@ nonisolated public enum ThemeCategory: CaseIterable, Sendable {
         switch self {
         case .colors: "Color"
         case .gradients: "Gradient"
+        case .meshGradients: "MeshGradient"
         case .shadows: "Shadow"
         }
     }
@@ -23,6 +26,7 @@ nonisolated public enum ThemeCategory: CaseIterable, Sendable {
         switch self {
         case .colors: "colors"
         case .gradients: "gradients"
+        case .meshGradients: "meshGradients"
         case .shadows: "shadows"
         }
     }
@@ -31,6 +35,7 @@ nonisolated public enum ThemeCategory: CaseIterable, Sendable {
         switch self {
         case .colors: config.colors ?? []
         case .gradients: config.gradients ?? []
+        case .meshGradients: config.meshGradients ?? []
         case .shadows: config.shadows ?? []
         }
     }

@@ -2,7 +2,7 @@ import Foundation
 
 /// Root structure of a theme.json file.
 nonisolated public struct ThemeFile: Sendable, Codable, Equatable {
-    /// Style token definitions (colors, gradients, shadows).
+    /// Style token definitions (colors, gradients, mesh gradients, shadows).
     public let styles: ThemeConfig
 
     /// Generation configuration (output path, etc.).
@@ -41,15 +41,18 @@ nonisolated public struct ThemeFile: Sendable, Codable, Equatable {
 nonisolated public struct ThemeConfig: Sendable, Codable, Equatable {
     public let colors: [ThemeToken]?
     public let gradients: [ThemeToken]?
+    public let meshGradients: [ThemeToken]?
     public let shadows: [ThemeToken]?
 
     nonisolated public init(
         colors: [ThemeToken]? = nil,
         gradients: [ThemeToken]? = nil,
+        meshGradients: [ThemeToken]? = nil,
         shadows: [ThemeToken]? = nil
     ) {
         self.colors = colors
         self.gradients = gradients
+        self.meshGradients = meshGradients
         self.shadows = shadows
     }
 

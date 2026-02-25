@@ -20,6 +20,13 @@ nonisolated public struct ThemePreviewGenerator: Sendable {
             components.append(gradientStripComponent())
         }
 
+        // Generate mesh gradient cards if mesh gradients present
+        if config.categories.contains(.meshGradients) {
+            let tokens = ThemeCategory.meshGradients.tokens(from: config)
+            sections.append(meshGradientCardsSection(tokens: tokens))
+            components.append(meshGradientCardComponent())
+        }
+
         // Generate shadow showcase if shadows present
         if config.categories.contains(.shadows) {
             let tokens = ThemeCategory.shadows.tokens(from: config)
@@ -113,6 +120,25 @@ nonisolated public struct ThemePreviewGenerator: Sendable {
         VStack(alignment: .leading, spacing: 12) {
             Text("Shadows")
                 .font(.headline)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 60))], spacing: 12) {
+        \(cards)
+            }
+        }
+        """
+    }
+
+    nonisolated func meshGradientCardsSection(tokens: [ThemeToken]) -> String {
+        let cards = tokens.map { token in
+            """
+                        MeshGradientCard(name: "\(token.name)", style: .\(token.style))
+            """
+        }.joined(separator: "\n")
+
+        return """
+        // MARK: - Mesh Gradients
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Mesh Gradients")
+                .font(.headline)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 120))], spacing: 12) {
         \(cards)
             }
@@ -154,7 +180,7 @@ nonisolated public struct ThemePreviewGenerator: Sendable {
                 VStack(alignment: .leading, spacing: 4) {
                     RoundedRectangle(cornerRadius: 8)
                         .fill(style)
-                        .frame(height: 32)
+                        .frame(height: 48)
 
                     Text(name)
                         .font(.caption)
@@ -176,7 +202,29 @@ nonisolated public struct ThemePreviewGenerator: Sendable {
                 VStack(alignment: .leading, spacing: 4) {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(style)
-                        .frame(height: 48)
+                        .frame(height: 60)
+
+                    Text(name)
+                        .font(.caption)
+                        .lineLimit(1)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        """
+    }
+
+    nonisolated func meshGradientCardComponent() -> String {
+        """
+        private struct MeshGradientCard<Style: ShapeStyle>: View {
+            let name: String
+            let style: Style
+
+            var body: some View {
+                VStack(alignment: .leading, spacing: 4) {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(style)
+                        .frame(height: 96)
 
                     Text(name)
                         .font(.caption)
