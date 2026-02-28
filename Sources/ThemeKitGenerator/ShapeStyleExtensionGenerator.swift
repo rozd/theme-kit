@@ -13,7 +13,7 @@ nonisolated public struct ShapeStyleExtensionGenerator: Sendable {
         import SwiftUI
         import ThemeKit
 
-        extension ShapeStyle where Self == ThemeShapeStyle<\(category.styleType)> {
+        nonisolated extension ShapeStyle where Self == ThemeShapeStyle<\(category.styleType)> {
         \(staticProperties)
         }
 
@@ -26,7 +26,7 @@ nonisolated public struct ShapeStyleExtensionGenerator: Sendable {
 
             content += """
 
-            extension ShapeStyle {
+            nonisolated extension ShapeStyle {
             \(instanceProperties)
             }
 

@@ -152,6 +152,25 @@ struct ThemeFileGeneratorTests {
         #expect(gradientsExt.content.contains("ThemeShapeStyle<Gradient>"))
     }
 
+    @Test func shapeStyleExtension_usesNonisolated() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: fullJSON).files
+
+        let colorsExt = try #require(files.first { $0.name == "ShapeStyle+ThemeColors.swift" })
+        #expect(colorsExt.content.contains("nonisolated extension ShapeStyle"))
+
+        let gradientsExt = try #require(files.first { $0.name == "ShapeStyle+ThemeGradients.swift" })
+        #expect(gradientsExt.content.contains("nonisolated extension ShapeStyle"))
+    }
+
+    @Test func shadowShapeStyleExtension_bothBlocksUseNonisolated() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: shadowsOnlyJSON).files
+        let shadowExt = try #require(files.first { $0.name == "ShapeStyle+ThemeShadows.swift" })
+
+        // Both the constrained static extension and unconstrained instance extension must be nonisolated
+        let matches = shadowExt.content.components(separatedBy: "nonisolated extension ShapeStyle")
+        #expect(matches.count == 3, "Expected two 'nonisolated extension ShapeStyle' occurrences (splits into 3 parts)")
+    }
+
     @Test func copyWith_themeUsesOptionalParams() throws {
         let files = try ThemeFileGenerator().generate(fromJSON: fullJSON).files
         let copyWith = try #require(files.first { $0.name == "Theme+CopyWith.swift" })
