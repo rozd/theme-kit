@@ -14,10 +14,11 @@ ThemeKit gives your app a design token system that works exactly like SwiftUI's 
 ## ✨ Features
 
 - 🍎 **SwiftUI Native** — tokens resolve through `ShapeStyle.resolve(in:)`, the same mechanism as `.primary` and `.tint`. No `@Environment` wrappers needed in views.
-- 🌗 **Adaptive by Default** — tokens adapt by color scheme (light/dark), size class (compact/regular), or any custom axis via resolvers. The correct variant resolves automatically at render time.
-- 📦 **Minimal Core** — the library is just `ThemeAdaptiveStyle` and a few `Codable` extensions. Everything else is generated.
-- 🔧 **Easy Setup** — declare tokens in JSON, run the plugin, fill in your colors. Four steps total.
-- 🔓 **Full Control** — generated files live in your project, fully readable and yours to extend.
+- 🎭 **Adaptive by Default** — tokens adapt by color scheme (light/dark), size class (compact/regular), or any custom axis via resolvers. The correct variant resolves automatically at render time.
+- 🎈 **Minimal Core** — the library is just `ThemeAdaptiveStyle` and a few `Codable` extensions. Everything else is generated.
+- 🪄 **Easy Setup** — declare tokens in JSON, run the plugin once, fill in your colors, done. **Zero imports** required in your app code.
+- 📖 **Transparent Logic** — the thin core and generated files are easy to read. Each file has a clear, specific role that is obvious at a glance.
+- 🎛️ **Full Control** — generated files live in your project, fully readable and yours to extend.
 
 ## 🍿 Demo
 
