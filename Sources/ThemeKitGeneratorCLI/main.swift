@@ -6,6 +6,7 @@ func run() throws {
 
     var configPath = "theme.json"
     var outputPath = "."
+    var skipDefaults = false
 
     var i = 1
     while i < args.count {
@@ -22,6 +23,8 @@ func run() throws {
                 throw GeneratorError.missingArgument("--output")
             }
             outputPath = args[i]
+        case "--skip-defaults":
+            skipDefaults = true
         default:
             break
         }
@@ -42,13 +45,15 @@ func run() throws {
 
     try FileManager.default.createDirectory(at: finalOutputURL, withIntermediateDirectories: true)
 
-    for file in result.files {
+    let filesToWrite = skipDefaults ? result.files.filter { $0.name != "Theme+Defaults.swift" } : result.files
+
+    for file in filesToWrite {
         let fileURL = finalOutputURL.appendingPathComponent(file.name)
         try file.content.write(to: fileURL, atomically: true, encoding: .utf8)
     }
 
-    print("ThemeKit: Generated \(result.files.count) files in \(finalOutputURL.path):")
-    for file in result.files {
+    print("ThemeKit: Generated \(filesToWrite.count) files in \(finalOutputURL.path):")
+    for file in filesToWrite {
         print("  - \(file.name)")
     }
 }

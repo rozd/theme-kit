@@ -50,5 +50,49 @@ let package = Package(
             name: "ThemeKitGeneratorTests",
             dependencies: ["ThemeKitGenerator"]
         ),
+        .plugin(
+            name: "GenerateTestFixturesPlugin",
+            capability: .buildTool(),
+            dependencies: ["ThemeKitGeneratorCLI"],
+            path: "Plugins/GenerateTestFixturesPlugin"
+        ),
+        // Generated code compilation verification targets
+        .target(
+            name: "GeneratedCodeSwift5",
+            dependencies: ["ThemeKit"],
+            path: "Tests/GeneratedCodeSwift5",
+            swiftSettings: [.swiftLanguageMode(.v5)],
+            plugins: [.plugin(name: "GenerateTestFixturesPlugin")]
+        ),
+        .target(
+            name: "GeneratedCodeSwift5MainActor",
+            dependencies: ["ThemeKit"],
+            path: "Tests/GeneratedCodeSwift5MainActor",
+            swiftSettings: [.swiftLanguageMode(.v5), .defaultIsolation(MainActor.self)],
+            plugins: [.plugin(name: "GenerateTestFixturesPlugin")]
+        ),
+        .target(
+            name: "GeneratedCodeSwift6",
+            dependencies: ["ThemeKit"],
+            path: "Tests/GeneratedCodeSwift6",
+            swiftSettings: [.swiftLanguageMode(.v6)],
+            plugins: [.plugin(name: "GenerateTestFixturesPlugin")]
+        ),
+        .target(
+            name: "GeneratedCodeSwift6MainActor",
+            dependencies: ["ThemeKit"],
+            path: "Tests/GeneratedCodeSwift6MainActor",
+            swiftSettings: [.swiftLanguageMode(.v6), .defaultIsolation(MainActor.self)],
+            plugins: [.plugin(name: "GenerateTestFixturesPlugin")]
+        ),
+        .testTarget(
+            name: "GeneratedCodeCompilationTests",
+            dependencies: [
+                "GeneratedCodeSwift5",
+                "GeneratedCodeSwift5MainActor",
+                "GeneratedCodeSwift6",
+                "GeneratedCodeSwift6MainActor",
+            ]
+        ),
     ]
 )

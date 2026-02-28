@@ -1,0 +1,12 @@
+{
+    "styles": {
+        "colors": ["surface", {"name": "primary", "style": "primaryColor"}],
+        "gradients": [{"name": "primary", "style": "primaryGradient"}],
+        "meshGradients": ["aurora"],
+        "shadows": ["card", {"name": "inner", "style": "innerGlow"}]
+    },
+    "config": {
+        "outputPath": ".",
+        "shouldGeneratePreview": true
+    }
+}
