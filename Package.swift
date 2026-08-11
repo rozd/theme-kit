@@ -15,6 +15,7 @@ let package = Package(
     products: [
         .library(
             name: "ThemeKit",
+            type: .dynamic,
             targets: ["ThemeKit"]
         ),
         .plugin(
@@ -22,9 +23,17 @@ let package = Package(
             targets: ["Generate Theme Files"]
         ),
     ],
+    dependencies: [
+        .package(url: "https://source.skip.tools/skip.git", from: "1.9.5"),
+        .package(url: "https://source.skip.tools/skip-fuse-ui.git", from: "1.0.0"),
+    ],
     targets: [
         .target(
-            name: "ThemeKit"
+            name: "ThemeKit",
+            dependencies: [
+                .product(name: "SkipFuseUI", package: "skip-fuse-ui")
+            ],
+            plugins: [.plugin(name: "skipstone", package: "skip")]
         ),
         .target(
             name: "ThemeKitGenerator"
@@ -96,3 +105,39 @@ let package = Package(
         ),
     ]
 )
+
+// Setting the SKIP_ZERO=1 environment strips the Skip plugin and all Skip dependencies,
+// restoring a plain SwiftPM package for Apple-only consumers.
+if Context.environment["SKIP_ZERO"] ?? "0" != "0" {
+    package.targets.forEach { target in
+        target.plugins?.removeAll(where: {
+            if case .plugin(let name, _) = $0 {
+                return name == "skipstone"
+            } else {
+                return false
+            }
+        })
+
+        target.dependencies.removeAll(where: { dependency in
+            if case .productItem(_, let package, _, _) = dependency {
+                return package == "skip" || package?.hasPrefix("skip-") == true
+            } else {
+                return false
+            }
+        })
+    }
+
+    package.dependencies.removeAll(where: { dependency in
+        if case .sourceControl(_, let url, _) = dependency.kind {
+            return url.hasPrefix("https://source.skip.dev/") || url.hasPrefix("https://source.skip.tools/")
+        } else {
+            return false
+        }
+    })
+
+    // Restore the default (automatic) library type — dynamic is only needed for Android/JNI loading.
+    package.products = [
+        .library(name: "ThemeKit", targets: ["ThemeKit"]),
+        .plugin(name: "Generate Theme Files", targets: ["Generate Theme Files"]),
+    ]
+}

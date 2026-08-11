@@ -50,6 +50,7 @@ struct ThemePreviewGeneratorTests {
 
     @Test func generate_containsPreviewMacro() {
         let file = ThemePreviewGenerator().generate(from: colorsOnlyConfig)
+        #expect(file.content.contains("#if !os(Android)"))
         #expect(file.content.contains("#Preview"))
         #expect(file.content.contains("ThemePreview()"))
     }

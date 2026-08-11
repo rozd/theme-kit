@@ -8,8 +8,15 @@ nonisolated public struct EnvironmentThemeGenerator: Sendable {
 
         import SwiftUI
 
+        nonisolated private struct ThemeEnvironmentKey: EnvironmentKey {
+            static let defaultValue: Theme = .default
+        }
+
         nonisolated extension EnvironmentValues {
-            @Entry public var theme: Theme = .default
+            public var theme: Theme {
+                get { self[ThemeEnvironmentKey.self] }
+                set { self[ThemeEnvironmentKey.self] = newValue }
+            }
         }
 
         """

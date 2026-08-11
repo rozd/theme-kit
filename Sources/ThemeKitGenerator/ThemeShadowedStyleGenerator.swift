@@ -9,6 +9,8 @@ nonisolated public struct ThemeShadowedStyleGenerator: Sendable {
         import SwiftUI
         import ThemeKit
 
+        // ShadowStyle and ShapeStyle conformance with custom resolve() are not available in SkipFuseUI on Android.
+        #if !os(Android)
         nonisolated public struct ThemeShadowedStyle<Base: ShapeStyle>: ShapeStyle {
             nonisolated let base: Base
             nonisolated let shadowKeyPath: KeyPath<Theme, ThemeAdaptiveStyle<Shadow>>
@@ -29,6 +31,7 @@ nonisolated public struct ThemeShadowedStyleGenerator: Sendable {
         }
 
         extension ThemeShadowedStyle: Equatable where Base: Equatable {}
+        #endif
 
         """
         return GeneratedFile(name: "ThemeShadowedStyle.swift", content: content)

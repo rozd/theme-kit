@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 nonisolated public extension ThemeAdaptiveStyle {

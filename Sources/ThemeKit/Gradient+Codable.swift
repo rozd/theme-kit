@@ -8,16 +8,26 @@ nonisolated extension Gradient: @retroactive Codable {
             self = .init(colors: colors)
         } else {
             let stopDicts = try container.decode([[String: CGFloat]].self)
-            let stops = try stopDicts.map { dict in
+            let pairs = try stopDicts.map { dict -> (hex: String, location: CGFloat) in
                 guard let (hex, location) = dict.first else {
                     throw DecodingError.dataCorruptedError(
                         in: container,
                         debugDescription: "Empty stop entry"
                     )
                 }
-                return Stop(color: Color(hex: hex), location: location)
+                return (hex, location)
             }
-            self = .init(stops: stops)
+#if os(Android)
+            // SkipFuseUI's Gradient.Stop has no public initializer; build the
+            // gradient from colors, then overwrite the public stop locations.
+            var gradient = Gradient(colors: pairs.map { Color(hex: $0.hex) })
+            for (index, pair) in pairs.enumerated() {
+                gradient.stops[index].location = pair.location
+            }
+            self = gradient
+#else
+            self = .init(stops: pairs.map { Stop(color: Color(hex: $0.hex), location: $0.location) })
+#endif
         }
     }
 

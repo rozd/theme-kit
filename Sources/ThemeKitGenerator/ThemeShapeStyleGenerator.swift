@@ -9,6 +9,8 @@ nonisolated public struct ThemeShapeStyleGenerator: Sendable {
         import SwiftUI
         import ThemeKit
 
+        // ShapeStyle conformance with custom resolve() is not available in SkipFuseUI on Android.
+        #if !os(Android)
         nonisolated public struct ThemeShapeStyle<Style: ShapeStyle & Sendable & Codable & Equatable>: ShapeStyle, Equatable {
             nonisolated let keyPath: KeyPath<Theme, ThemeAdaptiveStyle<Style>>
 
@@ -20,6 +22,7 @@ nonisolated public struct ThemeShapeStyleGenerator: Sendable {
                 environment.theme[keyPath: keyPath].resolved(in: environment)
             }
         }
+        #endif
 
         """
         return GeneratedFile(name: "ThemeShapeStyle.swift", content: content)

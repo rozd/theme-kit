@@ -14,6 +14,9 @@ nonisolated public enum Shadow: Sendable, Codable, Equatable {
     }
 }
 
+// ShadowStyle and the .shadow(_:) ShapeStyle are not available in SkipFuseUI's
+// SwiftUI facade on Android; Shadow remains available there as pure data.
+#if !os(Android)
 public extension Shadow {
 
     nonisolated var shadowStyle: ShadowStyle? {
@@ -48,3 +51,4 @@ extension Shadow: ShapeStyle {
         return AnyShapeStyle(.shadow(style))
     }
 }
+#endif

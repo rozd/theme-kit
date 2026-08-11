@@ -19,6 +19,7 @@ ThemeKit gives your app a design token system that works exactly like SwiftUI's 
 - 🪄 **Easy Setup** — declare tokens in JSON, run the plugin once, fill in your colors, done. **Zero imports** required in your app code.
 - 📖 **Transparent Logic** — the thin core and generated files are easy to read. Each file has a clear, specific role that is obvious at a glance.
 - 🎛️ **Full Control** — generated files live in your project, fully readable and yours to extend.
+- 🤖 **Skip / Android Ready** — the core library cross-compiles for Android with [Skip](https://skip.dev) (native/Fuse mode), so theme definitions, JSON (de)serialization, and explicit token resolution work in shared Swift code.
 
 ## 🍿 Demo
 
@@ -230,6 +231,34 @@ Every type conforms to `Codable`, so themes can come from a remote API, a bundle
 ```swift
 let theme = try JSONDecoder().decode(Theme.self, from: data)
 ```
+
+## 🤖 Skip / Android
+
+ThemeKit is compatible with [Skip](https://skip.dev) in **native (Skip Fuse) mode**: the `ThemeKit` module cross-compiles for Android as-is (`import SwiftUI` resolves to Skip's SwiftUI facade there), and the package ships the `skipstone` plugin and `Skip/skip.yml` configuration Skip needs to process it as a module of a Skip app.
+
+**What works on Android:**
+
+- `ThemeAdaptiveStyle` and all theme/token data types, including `Codable` round-trips of `theme.json` and remote themes (decoding colors and gradients from hex strings).
+- Explicit resolution via `resolved(colorScheme:sizeClass:)` — pass values read with `@Environment` in your views:
+
+```swift
+// Note: Skip requires @Environment properties to be non-private in shared views.
+@Environment(\.theme) var theme
+@Environment(\.colorScheme) var colorScheme
+
+var body: some View {
+    Text("Hello")
+        .foregroundStyle(theme.colors.primary.resolved(colorScheme: colorScheme) ?? .primary)
+}
+```
+
+**What stays Apple-only** (Skip's SwiftUI facade has no `ShapeStyle.resolve(in:)` customization point, and environment values cannot be read outside `@Environment`):
+
+- The implicit `ShapeStyle` sugar (`.foregroundStyle(.surface)`) and `resolved(in: EnvironmentValues)` — generated files guard these with `#if !os(Android)`, so they compile in a shared Skip module but the sugar is only callable on Apple platforms.
+- `MeshGradient` and `ShadowStyle` (`Shadow` remains available as data). Theme configs using the `meshGradients` category generate Apple-only code — omit that category in themes shared with Android.
+- Encoding colors back to hex strings (decoding works everywhere).
+
+**Apple-only projects:** if you don't use Skip, set the `SKIP_ZERO=1` environment variable when resolving packages to strip all Skip dependencies and plugins — ThemeKit then behaves as a plain SwiftPM package.
 
 ## ⚙️ How It Works
 

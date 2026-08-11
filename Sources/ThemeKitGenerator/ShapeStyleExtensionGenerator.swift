@@ -13,6 +13,8 @@ nonisolated public struct ShapeStyleExtensionGenerator: Sendable {
         import SwiftUI
         import ThemeKit
 
+        // ShapeStyle extensions are not available in SkipFuseUI on Android.
+        #if !os(Android)
         nonisolated extension ShapeStyle where Self == ThemeShapeStyle<\(category.styleType)> {
         \(staticProperties)
         }
@@ -32,6 +34,8 @@ nonisolated public struct ShapeStyleExtensionGenerator: Sendable {
 
             """
         }
+
+        content += "#endif\n"
 
         return GeneratedFile(name: "ShapeStyle+\(category.structName).swift", content: content)
     }

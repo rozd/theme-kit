@@ -1,0 +1,6 @@
+# Skip (https://skip.dev) configuration for the ThemeKit module.
+#
+# ThemeKit compiles natively for Android (Skip Fuse mode). It is consumed
+# from Swift code only, so no Kotlin API bridging is generated.
+skip:
+  mode: 'native'

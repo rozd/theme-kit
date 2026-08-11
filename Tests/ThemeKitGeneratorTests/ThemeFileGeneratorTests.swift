@@ -192,6 +192,7 @@ struct ThemeFileGeneratorTests {
         let files = try ThemeFileGenerator().generate(fromJSON: fullJSON).files
         let shapeStyle = try #require(files.first { $0.name == "ThemeShapeStyle.swift" })
 
+        #expect(shapeStyle.content.contains("#if !os(Android)"))
         #expect(shapeStyle.content.contains("func resolve(in environment: EnvironmentValues)"))
         #expect(shapeStyle.content.contains("environment.theme[keyPath: keyPath]"))
         #expect(shapeStyle.content.contains(".resolved(in: environment)"))
@@ -201,7 +202,8 @@ struct ThemeFileGeneratorTests {
         let files = try ThemeFileGenerator().generate(fromJSON: fullJSON).files
         let envFile = try #require(files.first { $0.name == "Environment+Theme.swift" })
 
-        #expect(envFile.content.contains("@Entry"))
+        #expect(envFile.content.contains("struct ThemeEnvironmentKey: EnvironmentKey"))
+        #expect(envFile.content.contains("static let defaultValue: Theme = .default"))
         #expect(envFile.content.contains("var theme: Theme"))
     }
 
@@ -309,6 +311,7 @@ struct ThemeFileGeneratorTests {
         let files = try ThemeFileGenerator().generate(fromJSON: shadowsOnlyJSON).files
         let file = try #require(files.first { $0.name == "ThemeShadowedStyle.swift" })
 
+        #expect(file.content.contains("#if !os(Android)"))
         #expect(file.content.contains("struct ThemeShadowedStyle<Base: ShapeStyle>"))
         #expect(file.content.contains("func resolve(in environment: EnvironmentValues)"))
         #expect(file.content.contains("AnyShapeStyle"))
@@ -318,6 +321,8 @@ struct ThemeFileGeneratorTests {
     @Test func shadowShapeStyle_containsBothStaticAndInstanceProperties() throws {
         let files = try ThemeFileGenerator().generate(fromJSON: shadowsOnlyJSON).files
         let shadowExt = try #require(files.first { $0.name == "ShapeStyle+ThemeShadows.swift" })
+
+        #expect(shadowExt.content.contains("#if !os(Android)"))
 
         // Static properties (standalone use)
         #expect(shadowExt.content.contains("static var card: Self"))

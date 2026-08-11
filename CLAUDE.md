@@ -90,3 +90,12 @@ A Svelte SPA at `.github/pages/` that lets users build `theme.json` visually ins
 - Generated `ShapeStyle` extensions constrain `Self` to `ThemeShapeStyle<ConcreteType>`
 - Shadow tokens also generate unconstrained instance properties on `ShapeStyle` for composition — static and instance properties coexist without conflict
 - Test targets use stub implementations of generated types for testing core types
+
+## Skip / Android Compatibility
+
+The `ThemeKit` target cross-compiles for Android via [Skip](https://skip.dev) in native (Fuse) mode: `Sources/ThemeKit/Skip/skip.yml`, skipstone plugin + SkipFuseUI dependency in Package.swift, `.dynamic` library product. `SKIP_ZERO=1` strips all Skip machinery (block at the bottom of Package.swift — keep it in sync when editing targets/products).
+
+- Apple-only APIs are gated with `#if !os(Android)`: ShapeStyle conformances (`resolve(in:)` doesn't exist in SkipFuseUI), `MeshGradient`, `ShadowStyle`, hex *encoding* of colors (no UIColor/NSColor). Generator templates emit the same gates in ShapeStyle/preview files and use a classic `EnvironmentKey` instead of `@Entry` (no macros in SkipFuseUI).
+- Cross-platform resolution API: `resolved(colorScheme:sizeClass:)` (environment values can't be read outside `@Environment` on Android).
+- The `meshGradients` config category generates Apple-only code by design — gating it would break the generated root `Theme` struct.
+- Verify Android compilation with: `skip android build --plain --target ThemeKit` (requires the skip CLI and a Swift Android SDK; `--target` scoping avoids the Darwin-only GeneratedCode* verification targets).

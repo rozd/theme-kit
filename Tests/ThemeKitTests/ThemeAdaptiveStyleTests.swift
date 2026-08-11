@@ -32,6 +32,43 @@ struct ThemeAdaptiveStyleTests {
         #expect(try resolved.hexString == "#0000FF")
     }
 
+    // MARK: - resolved(colorScheme:sizeClass:)
+
+    @Test func resolvedExplicit_colorScheme_returnsMatchingValue() throws {
+        let style = ThemeAdaptiveStyle(light: Color(hex: 0xFF0000), dark: Color(hex: 0x0000FF))
+        #expect(try style.resolved(colorScheme: .light)?.hexString == "#FF0000")
+        #expect(try style.resolved(colorScheme: .dark)?.hexString == "#0000FF")
+    }
+
+    @Test func resolvedExplicit_colorScheme_defaultsToLight() throws {
+        let style = ThemeAdaptiveStyle(light: Color(hex: 0xFF0000), dark: Color(hex: 0x0000FF))
+        #expect(try style.resolved()?.hexString == "#FF0000")
+    }
+
+    @Test func resolvedExplicit_sizeClass_returnsMatchingValue() throws {
+        let style = ThemeAdaptiveStyle(compact: Color(hex: 0xFF0000), regular: Color(hex: 0x0000FF))
+        #expect(try style.resolved(sizeClass: .compact)?.hexString == "#FF0000")
+        #expect(try style.resolved(sizeClass: .regular)?.hexString == "#0000FF")
+    }
+
+    @Test func resolvedExplicit_sizeClass_defaultsToRegular() throws {
+        let style = ThemeAdaptiveStyle(compact: Color(hex: 0xFF0000), regular: Color(hex: 0x0000FF))
+        #expect(try style.resolved()?.hexString == "#0000FF")
+    }
+
+    @Test func resolvedExplicit_value_returnsValueRegardlessOfEnvironment() throws {
+        let style = ThemeAdaptiveStyle(value: Color(hex: 0xFF0000))
+        #expect(try style.resolved()?.hexString == "#FF0000")
+        #expect(try style.resolved(colorScheme: .dark, sizeClass: .compact)?.hexString == "#FF0000")
+    }
+
+    @Test func resolvedExplicit_customResolver_returnsNil() throws {
+        let style = ThemeAdaptiveStyle<Color>(
+            resolver: .init { _ in Color(hex: 0xFF0000) }
+        )
+        #expect(style.resolved(colorScheme: .dark) == nil)
+    }
+
     // MARK: - Codable round-trip with Color
 
     @Test func codableRoundTrip_color() throws {

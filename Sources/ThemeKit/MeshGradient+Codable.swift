@@ -1,5 +1,8 @@
 import SwiftUI
 
+// MeshGradient is not available in SkipFuseUI's SwiftUI facade on Android.
+#if !os(Android)
+
 nonisolated extension MeshGradient {
 
     public init(
@@ -92,3 +95,5 @@ nonisolated extension MeshGradient: @retroactive Codable {
         }
     }
 }
+
+#endif
