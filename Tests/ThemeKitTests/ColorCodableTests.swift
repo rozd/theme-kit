@@ -112,13 +112,12 @@ struct ColorCodableTests {
         #expect(json == "\"#FF0000\"")
     }
 
-    @Test func encode_encodesNilWhenHexStringThrows() throws {
-        // The encode method uses `try container.encode(try? self.hexString)`.
-        // When hexString throws, the Optional<String> is nil and encodes as JSON null.
-        // On macOS, hexString never throws (NSColor.getRed returns Void), so we
-        // verify the normal path produces valid hex for edge-case colors.
-        // On iOS, UIColor.getRed can fail for non-RGB color spaces, triggering
-        // HexCodingError.rgbExtractionFailed — the encode would produce null.
+    @Test func encode_edgeCaseColors_producesValidHex() throws {
+        // The encode method now directly propagates hexString throws, instead of silently
+        // encoding null. For colors created with Color(hex:), hexString is cached at construction
+        // time, so it never throws. For other colors like .clear, .white, .black, hexString
+        // uses platform introspection (UIColor.getRed / NSColor.getRed / Android throws).
+        // This test verifies that standard colors encode correctly via the normal path.
         let edgeCaseColors: [Color] = [.clear, .white, .black, Color(hex: 0x000000)]
         for color in edgeCaseColors {
             let data = try JSONEncoder().encode(color)
@@ -135,5 +134,21 @@ struct ColorCodableTests {
         #expect(throws: DecodingError.self) {
             _ = try JSONDecoder().decode(Color.self, from: json)
         }
+    }
+
+    // MARK: - Encoding with hex cache
+
+    @Test func encode_cachedHexFromColorHexInit_reliable() throws {
+        // Colors constructed via Color(hex:) cache their hex string at construction
+        // time using pure integer math (exact, no color space conversion). This means
+        // encoding them is reliable and deterministic, and the cached path makes
+        // encoding work on platforms like Android where introspection is unavailable.
+        let color = Color(hex: 0xABCDEF)
+        let data1 = try JSONEncoder().encode(color)
+        let data2 = try JSONEncoder().encode(color)
+        // Both encodings should produce identical JSON, and should not throw
+        #expect(data1 == data2, "Encoding should be deterministic for cached hex")
+        let hex = try JSONDecoder().decode(String.self, from: data1)
+        #expect(hex == "#ABCDEF", "Cached hex should match input exactly")
     }
 }
