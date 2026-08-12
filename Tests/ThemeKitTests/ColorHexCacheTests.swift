@@ -54,6 +54,15 @@ struct ColorHexCacheTests {
         #expect(try b.hexString == "#030201")
     }
 
+    @Test func stringInit_malformedInputIsDeterministic() throws {
+        // `Color(hex:)` is public API as of the Android rendering work, so app devs will feed it
+        // arbitrary strings. These pin what they get: unparseable input is black, and the CSS
+        // three-digit shorthand is *not* expanded — "#FFF" is the number 0xFFF, not 0xFFFFFF.
+        #expect(try Color(hex: "not a colour").hexString == "#000000")
+        #expect(try Color(hex: "").hexString == "#000000")
+        #expect(try Color(hex: "#FFF").hexString == "#000FFF")
+    }
+
     @Test func canonicalHex_formatsChannelsIndependently() {
         #expect(Color.canonicalHex(0x000000) == "#000000")
         #expect(Color.canonicalHex(0xFFFFFF) == "#FFFFFF")

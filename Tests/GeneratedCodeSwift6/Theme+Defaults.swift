@@ -1,6 +1,11 @@
 import SwiftUI
 import ThemeKit
 
+// Values are authored with `Color(hex:)` rather than `Color(red:green:blue:)` for two reasons:
+// it is what the README recommends (only hex-constructed colours can encode on Android), and
+// because this target imports ThemeKit *without* `@testable`, compiling it is what proves that
+// initializer is genuinely public — across every Swift language mode these fixtures cover.
+
 nonisolated extension Theme {
     public static let `default` = Theme(
         colors: .`default`,
@@ -14,8 +19,8 @@ nonisolated extension Theme {
 
 nonisolated extension ThemeColors {
     public static let `default` = ThemeColors(
-        surface: .init(light: Color(red: 1, green: 1, blue: 1), dark: Color(red: 0, green: 0, blue: 0)),
-        primary: .init(light: Color(red: 0, green: 0.5, blue: 1), dark: Color(red: 0, green: 0.8, blue: 1))
+        surface: .init(light: Color(hex: 0xFFFFFF), dark: Color(hex: 0x000000)),
+        primary: .init(light: Color(hex: 0x0080FF), dark: Color(hex: 0x00CCFF))
     )
 }
 
@@ -24,8 +29,8 @@ nonisolated extension ThemeColors {
 nonisolated extension ThemeGradients {
     public static let `default` = ThemeGradients(
         primary: .init(
-            light: .init(colors: [Color(red: 0, green: 0.5, blue: 1), Color(red: 0.5, green: 0, blue: 1)]),
-            dark:  .init(colors: [Color(red: 0, green: 0.8, blue: 1), Color(red: 0.3, green: 0, blue: 0.5)])
+            light: .init(colors: [Color(hex: 0x0080FF), Color(hex: 0x8000FF)]),
+            dark:  .init(colors: [Color(hex: 0x00CCFF), Color(hex: 0x4D0080)])
         )
     )
 }
@@ -36,12 +41,12 @@ nonisolated extension ThemeMeshGradients {
     public static let `default` = ThemeMeshGradients(
         aurora: .init(
             light: .init(width: 2, height: 2, colors: [
-                Color(red: 0, green: 0.5, blue: 1), Color(red: 0.5, green: 0, blue: 1),
-                Color(red: 0, green: 0.8, blue: 0.8), Color(red: 0, green: 0.8, blue: 0.3),
+                Color(hex: 0x0080FF), Color(hex: 0x8000FF),
+                Color(hex: 0x00CCCC), Color(hex: 0x00CC4D),
             ]),
             dark: .init(width: 2, height: 2, colors: [
-                Color(red: 0.3, green: 0, blue: 0.5), Color(red: 0.5, green: 0, blue: 1),
-                Color(red: 0, green: 0.5, blue: 0.5), Color(red: 0, green: 0.7, blue: 0.5),
+                Color(hex: 0x4D0080), Color(hex: 0x8000FF),
+                Color(hex: 0x008080), Color(hex: 0x00B380),
             ])
         )
     )
