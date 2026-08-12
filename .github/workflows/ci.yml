@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/skip-android-compatibility]
   pull_request:
-    branches: [main]
+    branches: [main, feat/skip-android-compatibility]
 
 jobs:
   test:
@@ -42,3 +42,39 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.lcov
+
+  # Proves the ThemeKit target still cross-compiles for Android via Skip.
+  # Compile-only: rendering claims need an emulator and land with P1-3.
+  android-build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      # Installs the skip CLI, the Swift Android SDK, and a matching host
+      # toolchain (via swiftly), and runs `skip doctor`. The host Swift version
+      # is deliberately unpinned here so it stays consistent with the Android
+      # SDK artifactbundle the action installs.
+      - name: Setup Skip
+        uses: skiptools/actions/setup-skip@v1
+        with:
+          install-swift-android-sdk: true
+
+      # --target scoping avoids the Darwin-only GeneratedCodeSwift* verification
+      # targets, which cannot cross-compile.
+      - name: Build for Android
+        run: skip android build --plain --target ThemeKit
+
+  # Proves the SKIP_ZERO escape hatch still yields a plain SwiftPM package for
+  # Apple-only consumers, with every Skip dependency and plugin stripped.
+  skip-zero-build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Swift 6.2
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: 6.2
+
+      - name: Build without Skip
+        run: SKIP_ZERO=1 swift build
