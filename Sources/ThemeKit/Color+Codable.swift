@@ -10,6 +10,6 @@ extension Color: @retroactive Codable {
 
     nonisolated public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
-        try container.encode(try? self.hexString)
+        try container.encode(try self.hexString)
     }
 }
