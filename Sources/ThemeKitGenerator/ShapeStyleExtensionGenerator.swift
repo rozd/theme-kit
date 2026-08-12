@@ -13,7 +13,9 @@ nonisolated public struct ShapeStyleExtensionGenerator: Sendable {
         import SwiftUI
         import ThemeKit
 
-        // ShapeStyle extensions are not available in SkipFuseUI on Android.
+        // The two blocks are mutually exclusive — emitting both would be a redeclaration.
+        // ThemeStyleResolving is the Android stand-in for ShapeStyle as a namespace, so the
+        // accessors keep the same spelling and the same chaining behaviour on both platforms.
         #if !os(Android)
         nonisolated extension ShapeStyle where Self == ThemeShapeStyle<\(category.styleType)> {
         \(staticProperties)
@@ -29,6 +31,28 @@ nonisolated public struct ShapeStyleExtensionGenerator: Sendable {
             content += """
 
             nonisolated extension ShapeStyle {
+            \(instanceProperties)
+            }
+
+            """
+        }
+
+        content += """
+        #else
+        nonisolated extension ThemeStyleResolving where Self == ThemeShapeStyle<\(category.styleType)> {
+        \(staticProperties)
+        }
+
+        """
+
+        if category == .shadows {
+            let instanceProperties = tokens.map { token in
+                "    public var \(token.style): ThemeShadowedStyle<Self> { .init(base: self, shadowKeyPath: \\.\(category.propertyName).\(token.name)) }"
+            }.joined(separator: "\n")
+
+            content += """
+
+            nonisolated extension ThemeStyleResolving {
             \(instanceProperties)
             }
 

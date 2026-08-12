@@ -350,7 +350,7 @@ struct MeshGradientCodableTests {
     // MARK: - Point grid generation
 
     @Test func convenienceInit_producesCorrectPointGrid() {
-        let points = MeshGradient.pointsFrom(width: 3, height: 2)
+        let points = MeshGradientCoding.uniformPoints(width: 3, height: 2)
         // 3×2 grid = 6 points
         #expect(points.count == 6)
         // First point: top-left (0,0)
@@ -362,7 +362,7 @@ struct MeshGradientCodableTests {
     }
 
     @Test func convenienceInit_2x2_producesFourCornerPoints() {
-        let points = MeshGradient.pointsFrom(width: 2, height: 2)
+        let points = MeshGradientCoding.uniformPoints(width: 2, height: 2)
         #expect(points.count == 4)
         #expect(points[0] == SIMD2<Float>(0.0, 0.0))
         #expect(points[1] == SIMD2<Float>(1.0, 0.0))
@@ -371,7 +371,7 @@ struct MeshGradientCodableTests {
     }
 
     @Test func convenienceInit_3x3_producesInteriorPoints() {
-        let points = MeshGradient.pointsFrom(width: 3, height: 3)
+        let points = MeshGradientCoding.uniformPoints(width: 3, height: 3)
         #expect(points.count == 9)
         // Center point at (0.5, 0.5)
         #expect(points[4] == SIMD2<Float>(0.5, 0.5))
@@ -384,7 +384,7 @@ struct MeshGradientCodableTests {
     @Test func convenienceInit_1x1_producesSingleOriginPoint() {
         // Edge case: 1×1 grid has a single point, but (0/0, 0/0) is NaN;
         // the implementation divides by (width-1) which is 0. Verify behavior.
-        let points = MeshGradient.pointsFrom(width: 1, height: 1)
+        let points = MeshGradientCoding.uniformPoints(width: 1, height: 1)
         #expect(points.count == 1)
         let point = points[0]
         // The single point should be at the origin and have finite coordinates.
@@ -395,22 +395,22 @@ struct MeshGradientCodableTests {
     // MARK: - Invalid dimension handling
 
     @Test func convenienceInit_zeroWidth_returnsEmptyPointGrid() {
-        let points = MeshGradient.pointsFrom(width: 0, height: 3)
+        let points = MeshGradientCoding.uniformPoints(width: 0, height: 3)
         #expect(points.isEmpty)
     }
 
     @Test func convenienceInit_zeroHeight_returnsEmptyPointGrid() {
-        let points = MeshGradient.pointsFrom(width: 3, height: 0)
+        let points = MeshGradientCoding.uniformPoints(width: 3, height: 0)
         #expect(points.isEmpty)
     }
 
     @Test func convenienceInit_negativeWidth_returnsEmptyPointGrid() {
-        let points = MeshGradient.pointsFrom(width: -1, height: 3)
+        let points = MeshGradientCoding.uniformPoints(width: -1, height: 3)
         #expect(points.isEmpty)
     }
 
     @Test func convenienceInit_negativeHeight_returnsEmptyPointGrid() {
-        let points = MeshGradient.pointsFrom(width: 3, height: -1)
+        let points = MeshGradientCoding.uniformPoints(width: 3, height: -1)
         #expect(points.isEmpty)
     }
 }

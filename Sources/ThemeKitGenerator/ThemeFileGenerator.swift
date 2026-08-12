@@ -10,6 +10,7 @@ nonisolated public struct ThemeFileGenerator: Sendable {
         // Static files (same regardless of config)
         files.append(ThemeShapeStyleGenerator().generate())
         files.append(EnvironmentThemeGenerator().generate())
+        files.append(ThemeViewModifiersGenerator().generate(hasShadows: config.categories.contains(.shadows)))
 
         // Conditional static files
         if config.categories.contains(.shadows) {

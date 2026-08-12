@@ -9,9 +9,7 @@ nonisolated public struct ThemeShadowedStyleGenerator: Sendable {
         import SwiftUI
         import ThemeKit
 
-        // ShadowStyle and ShapeStyle conformance with custom resolve() are not available in SkipFuseUI on Android.
-        #if !os(Android)
-        nonisolated public struct ThemeShadowedStyle<Base: ShapeStyle>: ShapeStyle {
+        nonisolated public struct ThemeShadowedStyle<Base: Sendable>: Sendable {
             nonisolated let base: Base
             nonisolated let shadowKeyPath: KeyPath<Theme, ThemeAdaptiveStyle<Shadow>>
 
@@ -19,7 +17,15 @@ nonisolated public struct ThemeShadowedStyleGenerator: Sendable {
                 self.base = base
                 self.shadowKeyPath = shadowKeyPath
             }
+        }
 
+        extension ThemeShadowedStyle: Equatable where Base: Equatable {}
+
+        // ShadowStyle and ShapeStyle conformance with custom resolve() are not available in
+        // SkipFuseUI on Android; there the shadow is applied as a view modifier instead, by the
+        // overloads in View+ThemeStyles.swift.
+        #if !os(Android)
+        nonisolated extension ThemeShadowedStyle: ShapeStyle where Base: ShapeStyle {
             nonisolated public func resolve(in environment: EnvironmentValues) -> some ShapeStyle {
                 let shadow = environment.theme[keyPath: shadowKeyPath]
                     .resolved(in: environment)
@@ -29,8 +35,6 @@ nonisolated public struct ThemeShadowedStyleGenerator: Sendable {
                 return AnyShapeStyle(base.shadow(shadowStyle))
             }
         }
-
-        extension ThemeShadowedStyle: Equatable where Base: Equatable {}
         #endif
 
         """
