@@ -5,21 +5,53 @@
 #if os(Android)
 import SwiftUI
 
-/// The Android rendering strategy for a resolved token value.
+/// A drop shadow, in the form `View.shadow(color:radius:x:y:)` takes.
+nonisolated public struct AndroidShadow: Sendable, Equatable {
+    public var color: Color?
+    public var radius: CGFloat
+    public var x: CGFloat
+    public var y: CGFloat
+
+    nonisolated public init(color: Color?, radius: CGFloat, x: CGFloat, y: CGFloat) {
+        self.color = color
+        self.radius = radius
+        self.x = x
+        self.y = y
+    }
+}
+
+/// How a resolved token value is rendered on Android.
 ///
-/// The cases mirror the two distinct primitives SkipFuseUI offers: styles that can
-/// be handed to a `ShapeStyle`-taking modifier, and shadows, which are a view
-/// modifier rather than a style there.
-nonisolated public enum AndroidStyleRendering: Sendable {
+/// Both fields are optional and independent, because a shadowed style
+/// (`.surface.cardShadow`) contributes a fill *and* a shadow, while a plain colour
+/// contributes only a fill and a shadow token only a shadow. A value with neither
+/// renders the content unstyled — which is also what an unrepresentable token
+/// (an inner shadow, a custom `Resolver`) resolves to.
+nonisolated public struct AndroidStyleRendering: Sendable {
 
-    /// Render by passing this style to a `ShapeStyle`-taking modifier.
-    case shapeStyle(AnyShapeStyle)
+    public var shapeStyle: AnyShapeStyle?
+    public var shadow: AndroidShadow?
 
-    /// Render by applying `View.shadow(color:radius:x:y:)` to the content.
-    case shadow(color: Color?, radius: CGFloat, x: CGFloat, y: CGFloat)
+    nonisolated public init(shapeStyle: AnyShapeStyle? = nil, shadow: AndroidShadow? = nil) {
+        self.shapeStyle = shapeStyle
+        self.shadow = shadow
+    }
 
-    /// No Android equivalent exists; content renders unstyled.
-    case unsupported
+    /// Nothing to draw: the token has no Android equivalent, or could not resolve.
+    nonisolated public static let unsupported = AndroidStyleRendering()
+
+    nonisolated public static func style(_ shapeStyle: AnyShapeStyle) -> AndroidStyleRendering {
+        AndroidStyleRendering(shapeStyle: shapeStyle)
+    }
+
+    nonisolated public static func shadow(_ shadow: AndroidShadow) -> AndroidStyleRendering {
+        AndroidStyleRendering(shadow: shadow)
+    }
+
+    /// Composes a shadow onto this style, for `.surface.cardShadow` chaining.
+    nonisolated public func adding(_ shadow: AndroidShadow?) -> AndroidStyleRendering {
+        AndroidStyleRendering(shapeStyle: shapeStyle, shadow: shadow ?? self.shadow)
+    }
 }
 
 /// A token value that knows how to render itself on Android.
@@ -34,7 +66,7 @@ nonisolated public protocol AndroidRenderableStyle {
 
 extension Color: AndroidRenderableStyle {
     nonisolated public var androidRendering: AndroidStyleRendering {
-        .shapeStyle(AnyShapeStyle(self))
+        .style(AnyShapeStyle(self))
     }
 }
 
@@ -43,17 +75,18 @@ extension Gradient: AndroidRenderableStyle {
     // `ShapeStyle`. Its bridged form is a top-to-bottom `LinearGradient`, which is
     // what SwiftUI's own `Gradient: ShapeStyle` conformance draws on Apple.
     nonisolated public var androidRendering: AndroidStyleRendering {
-        .shapeStyle(AnyShapeStyle(AnyGradient(self)))
+        .style(AnyShapeStyle(AnyGradient(self)))
     }
 }
 
 extension Shadow: AndroidRenderableStyle {
     // Inner shadows have no `View.shadow` equivalent; they need either the
-    // `composeModifier` escape hatch or upstream `ShadowStyle` support.
+    // `composeModifier` escape hatch or upstream `ShadowStyle` support, so they
+    // render as nothing rather than as a wrong-looking drop shadow.
     nonisolated public var androidRendering: AndroidStyleRendering {
         switch self {
         case .drop(let color, let radius, let x, let y):
-            return .shadow(color: color, radius: radius, x: x, y: y)
+            return .shadow(AndroidShadow(color: color, radius: radius, x: x, y: y))
         case .inner, .none:
             return .unsupported
         }

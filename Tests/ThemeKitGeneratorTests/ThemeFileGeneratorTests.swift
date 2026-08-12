@@ -56,6 +56,7 @@ struct ThemeFileGeneratorTests {
 
         #expect(names.contains("ThemeShapeStyle.swift"))
         #expect(names.contains("Environment+Theme.swift"))
+        #expect(names.contains("View+ThemeStyles.swift"))
         #expect(names.contains("Theme.swift"))
         #expect(names.contains("ThemeColors.swift"))
         #expect(names.contains("ThemeGradients.swift"))
@@ -65,7 +66,7 @@ struct ThemeFileGeneratorTests {
         #expect(names.contains("ShapeStyle+ThemeColors.swift"))
         #expect(names.contains("ShapeStyle+ThemeGradients.swift"))
         #expect(names.contains("Theme+Defaults.swift"))
-        #expect(files.count == 11)
+        #expect(files.count == 12)
     }
 
     @Test func colorsOnly_generatesSubset() throws {
@@ -75,6 +76,7 @@ struct ThemeFileGeneratorTests {
         // Static files always present
         #expect(names.contains("ThemeShapeStyle.swift"))
         #expect(names.contains("Environment+Theme.swift"))
+        #expect(names.contains("View+ThemeStyles.swift"))
         #expect(names.contains("Theme.swift"))
         #expect(names.contains("Theme+CopyWith.swift"))
 
@@ -90,7 +92,7 @@ struct ThemeFileGeneratorTests {
         #expect(!names.contains("ThemeGradients.swift"))
         #expect(!names.contains("ThemeShadows.swift"))
 
-        #expect(files.count == 8)
+        #expect(files.count == 9)
     }
 
     // MARK: - Generated header
@@ -166,9 +168,13 @@ struct ThemeFileGeneratorTests {
         let files = try ThemeFileGenerator().generate(fromJSON: shadowsOnlyJSON).files
         let shadowExt = try #require(files.first { $0.name == "ShapeStyle+ThemeShadows.swift" })
 
-        // Both the constrained static extension and unconstrained instance extension must be nonisolated
-        let matches = shadowExt.content.components(separatedBy: "nonisolated extension ShapeStyle")
-        #expect(matches.count == 3, "Expected two 'nonisolated extension ShapeStyle' occurrences (splits into 3 parts)")
+        // On Apple: constrained static extension and unconstrained instance extension both nonisolated
+        // On Android: constrained and unconstrained ThemeStyleResolving extensions both nonisolated
+        let appleShapeStyleMatches = shadowExt.content.components(separatedBy: "nonisolated extension ShapeStyle")
+        #expect(appleShapeStyleMatches.count == 3, "Expected two 'nonisolated extension ShapeStyle' occurrences in Apple block (splits into 3 parts)")
+
+        let androidMatches = shadowExt.content.components(separatedBy: "nonisolated extension ThemeStyleResolving")
+        #expect(androidMatches.count == 3, "Expected two 'nonisolated extension ThemeStyleResolving' occurrences in Android block (splits into 3 parts)")
     }
 
     @Test func copyWith_themeUsesOptionalParams() throws {
@@ -192,6 +198,7 @@ struct ThemeFileGeneratorTests {
         let files = try ThemeFileGenerator().generate(fromJSON: fullJSON).files
         let shapeStyle = try #require(files.first { $0.name == "ThemeShapeStyle.swift" })
 
+        #expect(shapeStyle.content.contains("nonisolated public struct ThemeShapeStyle"))
         #expect(shapeStyle.content.contains("#if !os(Android)"))
         #expect(shapeStyle.content.contains("func resolve(in environment: EnvironmentValues)"))
         #expect(shapeStyle.content.contains("environment.theme[keyPath: keyPath]"))
@@ -264,7 +271,7 @@ struct ThemeFileGeneratorTests {
         let files = try ThemeFileGenerator().generate(fromJSON: fullJSON).files
         let shapeStyle = try #require(files.first { $0.name == "ThemeShapeStyle.swift" })
 
-        #expect(shapeStyle.content.contains("Style: ShapeStyle & Sendable & Codable"))
+        #expect(shapeStyle.content.contains("Style: Sendable & Codable & Equatable"))
     }
 
     // MARK: - Config Section
@@ -311,8 +318,8 @@ struct ThemeFileGeneratorTests {
         let files = try ThemeFileGenerator().generate(fromJSON: shadowsOnlyJSON).files
         let file = try #require(files.first { $0.name == "ThemeShadowedStyle.swift" })
 
+        #expect(file.content.contains("nonisolated public struct ThemeShadowedStyle<Base: Sendable>"))
         #expect(file.content.contains("#if !os(Android)"))
-        #expect(file.content.contains("struct ThemeShadowedStyle<Base: ShapeStyle>"))
         #expect(file.content.contains("func resolve(in environment: EnvironmentValues)"))
         #expect(file.content.contains("AnyShapeStyle"))
         #expect(file.content.contains("ThemeShadowedStyle: Equatable where Base: Equatable"))
@@ -323,12 +330,14 @@ struct ThemeFileGeneratorTests {
         let shadowExt = try #require(files.first { $0.name == "ShapeStyle+ThemeShadows.swift" })
 
         #expect(shadowExt.content.contains("#if !os(Android)"))
+        #expect(shadowExt.content.contains("#else"))
+        #expect(shadowExt.content.contains("#endif"))
 
-        // Static properties (standalone use)
+        // Static properties (standalone use) — both Apple and Android versions
         #expect(shadowExt.content.contains("static var card: Self"))
         #expect(shadowExt.content.contains("static var innerGlow: Self"))
 
-        // Instance properties (composition)
+        // Instance properties (composition) — both Apple and Android versions
         #expect(shadowExt.content.contains("public var card: ThemeShadowedStyle<Self>"))
         #expect(shadowExt.content.contains("public var innerGlow: ThemeShadowedStyle<Self>"))
     }
@@ -348,21 +357,23 @@ struct ThemeFileGeneratorTests {
         let files = try ThemeFileGenerator().generate(fromJSON: fullWithShadowsJSON).files
         let names = Set(files.map(\.name))
 
-        // 2 static + 1 conditional static + 1 theme + 1 theme copyWith + 3×3 per-category + 1 defaults = 15
+        // 3 static + 1 conditional static + 1 theme + 1 theme copyWith + 3×3 per-category + 1 defaults = 16
         #expect(names.contains("ThemeShadowedStyle.swift"))
         #expect(names.contains("ThemeShadows.swift"))
         #expect(names.contains("ShapeStyle+ThemeShadows.swift"))
-        #expect(files.count == 15)
+        #expect(files.count == 16)
     }
 
-    @Test func nonShadowCategories_doNotContainInstanceProperties() throws {
+    @Test func nonShadowCategories_doNotContainCompositionProperties() throws {
         let files = try ThemeFileGenerator().generate(fromJSON: fullWithShadowsJSON).files
 
         let colorsExt = try #require(files.first { $0.name == "ShapeStyle+ThemeColors.swift" })
-        #expect(!colorsExt.content.contains("ThemeShadowedStyle"))
+        // Should not have instance properties, only static properties in both Apple and Android blocks
+        #expect(!colorsExt.content.contains("public var"))
 
         let gradientsExt = try #require(files.first { $0.name == "ShapeStyle+ThemeGradients.swift" })
-        #expect(!gradientsExt.content.contains("ThemeShadowedStyle"))
+        // Should not have instance properties, only static properties in both Apple and Android blocks
+        #expect(!gradientsExt.content.contains("public var"))
     }
 
     // MARK: - Mesh gradients
@@ -373,13 +384,14 @@ struct ThemeFileGeneratorTests {
 
         #expect(names.contains("ThemeShapeStyle.swift"))
         #expect(names.contains("Environment+Theme.swift"))
+        #expect(names.contains("View+ThemeStyles.swift"))
         #expect(names.contains("Theme.swift"))
         #expect(names.contains("Theme+CopyWith.swift"))
         #expect(names.contains("ThemeMeshGradients.swift"))
         #expect(names.contains("ThemeMeshGradients+CopyWith.swift"))
         #expect(names.contains("ShapeStyle+ThemeMeshGradients.swift"))
         #expect(names.contains("Theme+Defaults.swift"))
-        #expect(files.count == 8)
+        #expect(files.count == 9)
     }
 
     @Test func meshGradientsCategoryStruct_containsTokenProperties() throws {
@@ -476,5 +488,109 @@ struct ThemeFileGeneratorTests {
         #expect(previewFile.content.contains("#Preview"))
         #expect(previewFile.content.contains("// MARK: - Colors"))
         #expect(previewFile.content.contains("// MARK: - Gradients"))
+    }
+
+    // MARK: - Android render path
+
+    @Test func viewModifiers_generatedAlways() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: fullJSON).files
+        let names = Set(files.map(\.name))
+
+        #expect(names.contains("View+ThemeStyles.swift"))
+    }
+
+    @Test func viewModifiers_containsAndroidBlocks() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: fullJSON).files
+        let viewModifiers = try #require(files.first { $0.name == "View+ThemeStyles.swift" })
+
+        #expect(viewModifiers.content.contains("#if os(Android)"))
+        #expect(viewModifiers.content.contains("nonisolated public protocol ThemeStyleResolving"))
+        #expect(viewModifiers.content.contains("func themeRendering("))
+        #expect(viewModifiers.content.contains("AndroidStyleRendering"))
+        #expect(viewModifiers.content.contains("#endif"))
+    }
+
+    @Test func viewModifiers_withoutShadows_noShadowedStyleConformance() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: colorsOnlyJSON).files
+        let viewModifiers = try #require(files.first { $0.name == "View+ThemeStyles.swift" })
+
+        #expect(!viewModifiers.content.contains("extension ThemeShadowedStyle: ThemeStyleResolving"))
+    }
+
+    @Test func viewModifiers_withShadows_hasShadowedStyleConformance() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: fullWithShadowsJSON).files
+        let viewModifiers = try #require(files.first { $0.name == "View+ThemeStyles.swift" })
+
+        #expect(viewModifiers.content.contains("extension ThemeShadowedStyle: ThemeStyleResolving"))
+    }
+
+    @Test func shapeStyleExtensions_mutuallyExclusiveBlocks() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: fullJSON).files
+        let colorsExt = try #require(files.first { $0.name == "ShapeStyle+ThemeColors.swift" })
+
+        // Must have both #if !os(Android) and #else blocks
+        #expect(colorsExt.content.contains("#if !os(Android)"))
+        #expect(colorsExt.content.contains("#else"))
+        #expect(colorsExt.content.contains("#endif"))
+
+        // Apple block should use ShapeStyle
+        #expect(colorsExt.content.contains("nonisolated extension ShapeStyle where Self == ThemeShapeStyle<Color>"))
+
+        // Android block should use ThemeStyleResolving
+        #expect(colorsExt.content.contains("nonisolated extension ThemeStyleResolving where Self == ThemeShapeStyle<Color>"))
+    }
+
+    @Test func themeShapeStyle_unconditionalStruct() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: fullJSON).files
+        let shapeStyle = try #require(files.first { $0.name == "ThemeShapeStyle.swift" })
+
+        // The struct must precede the platform gate — it exists on every platform, and
+        // only its ShapeStyle conformance is Apple-only.
+        let structIndex = try #require(shapeStyle.content.range(of: "nonisolated public struct ThemeShapeStyle"))
+        let gateIndex = try #require(shapeStyle.content.range(of: "#if !os(Android)"))
+        #expect(structIndex.lowerBound < gateIndex.lowerBound,
+                "ThemeShapeStyle must be declared outside the Apple-only gate")
+
+        // Sendable must be stated up front: a conditional ShapeStyle conformance does not
+        // imply the Sendable it inherits, and the Apple build fails without it.
+        #expect(shapeStyle.content.contains("nonisolated public struct ThemeShapeStyle<Style: Sendable & Codable & Equatable>: Equatable, Sendable"))
+    }
+
+    @Test func viewModifiers_containsVerifiedOverloadSet() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: fullWithShadowsJSON).files
+        let viewModifiers = try #require(files.first { $0.name == "View+ThemeStyles.swift" })
+
+        #expect(viewModifiers.content.contains("func foregroundStyle<S: ThemeStyleResolving>"))
+        #expect(viewModifiers.content.contains("func background<S: ThemeStyleResolving>"))
+        #expect(viewModifiers.content.contains("func background<S: ThemeStyleResolving, T: Shape>"))
+        #expect(viewModifiers.content.contains("func border<S: ThemeStyleResolving>"))
+        #expect(viewModifiers.content.contains("func fill<S: ThemeStyleResolving>"))
+        #expect(viewModifiers.content.contains("func stroke<S: ThemeStyleResolving>"))
+    }
+
+    @Test func viewModifiers_emitsNoTintOverload() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: fullWithShadowsJSON).files
+        let viewModifiers = try #require(files.first { $0.name == "View+ThemeStyles.swift" })
+
+        // Deliberate omission, not an oversight: `.tint(.primaryColor)` does not compile on
+        // Apple, because Swift cannot infer an implicit member's base through tint's
+        // optional generic. Emitting it on Android alone would build on one platform and
+        // not the other — the exact asymmetry this whole design exists to avoid.
+        #expect(!viewModifiers.content.contains("func tint("))
+    }
+
+    @Test func themeShadowedStyle_unconditionalStructWithSendable() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: shadowsOnlyJSON).files
+        let shadowedStyle = try #require(files.first { $0.name == "ThemeShadowedStyle.swift" })
+
+        // Struct declaration should not be inside #if
+        #expect(shadowedStyle.content.contains("nonisolated public struct ThemeShadowedStyle<Base: Sendable>: Sendable"))
+
+        // Equatable conformance should be conditional
+        #expect(shadowedStyle.content.contains("extension ThemeShadowedStyle: Equatable where Base: Equatable"))
+
+        // ShapeStyle conformance should be conditional on Apple only
+        #expect(shadowedStyle.content.contains("#if !os(Android)"))
+        #expect(shadowedStyle.content.contains("nonisolated extension ThemeShadowedStyle: ShapeStyle where Base: ShapeStyle"))
     }
 }

@@ -75,7 +75,7 @@ extension MeshGradient: AndroidRenderableStyle {
         guard let first = colors.first, let last = colors.last else {
             return .unsupported
         }
-        return .shapeStyle(AnyShapeStyle(
+        return .style(AnyShapeStyle(
             LinearGradient(
                 colors: [first, last],
                 startPoint: .topLeading,

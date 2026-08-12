@@ -54,6 +54,7 @@ struct GenerateTestFixturesPlugin: BuildToolPlugin {
         // Static files (always generated)
         files.append("ThemeShapeStyle.swift")
         files.append("Environment+Theme.swift")
+        files.append("View+ThemeStyles.swift")
         files.append("Theme.swift")
         files.append("Theme+CopyWith.swift")
 
