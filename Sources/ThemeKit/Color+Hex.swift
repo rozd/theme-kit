@@ -3,7 +3,14 @@ import SwiftUI
 
 extension Color {
 
-    nonisolated init(hex: Int) {
+    /// Creates a colour from a packed `0xRRGGBB` value, remembering the hex it came from.
+    ///
+    /// Prefer this over `Color(red:green:blue:)` when authoring theme defaults: a colour built
+    /// this way records its canonical `#RRGGBB` spelling at construction, which is what makes
+    /// `hexString` — and therefore encoding the theme to JSON — work on Android, where no colour
+    /// introspection exists. On Apple platforms it additionally makes encoding byte-exact rather
+    /// than round-tripping through a colour space.
+    nonisolated public init(hex: Int) {
         self.init(
             red: Double((hex >> 16) & 0xFF) / 255.0,
             green: Double((hex >> 8) & 0xFF) / 255.0,
@@ -12,14 +19,25 @@ extension Color {
         Color.hexCache.store(Color.canonicalHex(hex), for: self)
     }
 
-    nonisolated init(hex string: String) {
+    /// Creates a colour from a `#RRGGBB` or `RRGGBB` string, remembering the hex it came from.
+    ///
+    /// Unparseable input yields black rather than failing; the same encodability contract as
+    /// ``init(hex:)-(Int)`` applies.
+    nonisolated public init(hex string: String) {
         let hex = string.hasPrefix("#") ? String(string.dropFirst()) : string
         var value: UInt64 = 0
         Scanner(string: hex).scanHexInt64(&value)
         self.init(hex: Int(value))
     }
 
-    nonisolated var hexString: String {
+    /// The colour's `#RRGGBB` spelling.
+    ///
+    /// Resolves in two ways, in order: colours constructed through `Color(hex:)` return their
+    /// recorded spelling exactly; everything else is introspected via UIKit/AppKit. Android has
+    /// no introspection path, so a colour that never passed through `Color(hex:)` throws
+    /// ``HexCodingError/rgbExtractionFailed`` there — as do Apple catalog colours with no RGB
+    /// components.
+    nonisolated public var hexString: String {
         get throws {
             // Colours built from a hex value know their exact serialized form. This is
             // the only path that works on Android, and on Apple it is more accurate than
@@ -68,7 +86,9 @@ extension Color {
 }
 
 extension Color {
-    nonisolated enum HexCodingError: Error {
+    /// Why ``Color/hexString`` could not produce a spelling for a colour.
+    nonisolated public enum HexCodingError: Error {
+        /// The colour has no readable RGB components and was not built through `Color(hex:)`.
         case rgbExtractionFailed
     }
 }

@@ -19,11 +19,13 @@ ThemeKit gives your app a design token system that works exactly like SwiftUI's 
 - 🪄 **Easy Setup** — declare tokens in JSON, run the plugin once, fill in your colors, done. **Zero imports** required in your app code.
 - 📖 **Transparent Logic** — the thin core and generated files are easy to read. Each file has a clear, specific role that is obvious at a glance.
 - 🎛️ **Full Control** — generated files live in your project, fully readable and yours to extend.
-- 🤖 **Skip / Android Ready** — the core library cross-compiles for Android with [Skip](https://skip.dev) (native/Fuse mode), so theme definitions, JSON (de)serialization, and explicit token resolution work in shared Swift code.
+- 🤖 **Skip / Android Ready** — the same call sites render on Android with [Skip](https://skip.dev) (native/Fuse mode). `.foregroundStyle(.primaryColor)` is spelled identically on both platforms — no `#if os(Android)`, no manual resolution.
 
 ## 🍿 Demo
 
 https://github.com/user-attachments/assets/f4563c6a-57e2-4356-bd87-72276ec9bf96
+
+[**rozd/theme-kit-demo**](https://github.com/rozd/theme-kit-demo) is a dual-platform [Skip](https://skip.dev) app covering every token category from one shared source tree, with side-by-side iOS and Android screenshots.
 
 ## 🛠️ Configurator
 
@@ -181,11 +183,14 @@ RoundedRectangle(cornerRadius: 12)
     .fill(.surface.card)              // theme color + theme shadow
 
 RoundedRectangle(cornerRadius: 12)
-    .fill(.red.card)                  // SwiftUI color + theme shadow
+    .fill(.red.card)                  // SwiftUI color + theme shadow (Apple-only)
 
 RoundedRectangle(cornerRadius: 12)
     .fill(.surface.card.innerGlow)    // multiple shadows chained
 ```
+
+> Chaining onto a **theme** style (`.surface.card`) works everywhere. Chaining onto a **SwiftUI**
+> style (`.red.card`) is Apple-only — see [Skip / Android](#-skip--android).
 
 ### Switch themes at runtime
 
@@ -234,44 +239,87 @@ let theme = try JSONDecoder().decode(Theme.self, from: data)
 
 ## 🤖 Skip / Android
 
-ThemeKit is compatible with [Skip](https://skip.dev) in **native (Skip Fuse) mode**: the `ThemeKit` module cross-compiles for Android as-is (`import SwiftUI` resolves to Skip's SwiftUI facade there), and the package ships the `skipstone` plugin and `Skip/skip.yml` configuration Skip needs to process it as a module of a Skip app.
-
-**What works on Android:**
-
-- `ThemeAdaptiveStyle` and all theme/token data types, including `Codable` round-trips of `theme.json` and remote themes (decoding colors and gradients from hex strings).
-- Explicit resolution via `resolved(colorScheme:sizeClass:)` — pass values read with `@Environment` in your views:
+ThemeKit works with [Skip](https://skip.dev) in **native (Skip Fuse) mode**, and the call sites are the same ones you write on Apple:
 
 ```swift
-// Note: Skip requires @Environment properties to be non-private in shared views.
-@Environment(\.theme) var theme
-@Environment(\.colorScheme) var colorScheme
+// This file compiles and renders on iOS and Android. No #if, no manual resolution.
+Text("Hello")
+    .foregroundStyle(.primaryColor)
 
-var body: some View {
-    Text("Hello")
-        .foregroundStyle(theme.colors.primary.resolved(colorScheme: colorScheme) ?? .primary)
-}
+RoundedRectangle(cornerRadius: 12)
+    .fill(.surface.card)
 ```
 
-**What stays Apple-only** (Skip's SwiftUI facade has no `ShapeStyle.resolve(in:)` customization point, and environment values cannot be read outside `@Environment`):
+Add ThemeKit to your Skip app the way you'd add any Skip module — the package already ships the `skipstone` plugin and its `Skip/skip.yml` — then generate your theme files as usual. Nothing about the integration steps changes.
 
-- The implicit `ShapeStyle` sugar (`.foregroundStyle(.surface)`) and `resolved(in: EnvironmentValues)` — generated files guard these with `#if !os(Android)`, so they compile in a shared Skip module but the sugar is only callable on Apple platforms.
-- `MeshGradient` and `ShadowStyle` (`Shadow` remains available as data). Theme configs using the `meshGradients` category generate Apple-only code — omit that category in themes shared with Android.
-- Encoding colors back to hex strings (decoding works everywhere).
+<details>
+<summary><b>How the same spelling works on both platforms</b></summary>
 
-**Apple-only projects:** if you don't use Skip, set the `SKIP_ZERO=1` environment variable when resolving packages to strip all Skip dependencies and plugins — ThemeKit then behaves as a plain SwiftPM package.
+On Apple, tokens resolve through `ShapeStyle.resolve(in:)`. Skip's SwiftUI facade has no such customization point, and environment values can't be read outside a view body there — so on Android the generator emits a small parallel surface instead: overloads of the style-taking modifiers (`foregroundStyle`, `background`, `border`, `fill`, `stroke`) that wrap your content in a view which reads `@Environment` itself.
+
+Those overloads are constrained to a generated `ThemeStyleResolving` protocol, which plays exactly the role `ShapeStyle` plays on Apple — the namespace your token accessors hang off, and the constraint that lets `.surface.card` re-bind from a style to a shadowed style mid-chain. Only ThemeKit's own types conform to it, so the overloads can never be ambiguous with Skip's.
+
+</details>
+
+### Support matrix
+
+| Feature | Apple | Android |
+|---|:--:|:--:|
+| Token data, `Codable` decode, `copyWith` | ✅ | ✅ |
+| `.foregroundStyle(.primaryColor)` and friends — identical spelling | ✅ | ✅ |
+| Colors, gradients | ✅ | ✅ |
+| Shadows | ✅ | drop only — `.inner` is data |
+| Mesh gradients | ✅ | degraded — two-stop diagonal |
+| Encode theme → JSON | ✅ | `Color(hex:)` colors only |
+| `#Preview` | ✅ | ❌ |
+| Custom `Resolver` tokens | ✅ | ❌ — resolve to `nil` |
+| `.red.card` (shadow on a *SwiftUI* style) | ✅ | ❌ |
+| `.tint(.primaryColor)` | ❌ | ❌ |
+
+### Things worth knowing
+
+**Author your defaults with `Color(hex:)`.** A color records its hex spelling at construction, and that recording is the only way `JSONEncoder().encode(theme)` can work on Android — the platform exposes no color components to read back. Colors built with `Color(red:green:blue:)` decode fine but cannot re-encode there.
+
+```swift
+// Encodes everywhere.
+surface: .init(light: Color(hex: 0xF7F5F2), dark: Color(hex: 0x1A1A1F))
+```
+
+The hex format is `#RRGGBB` with **no alpha channel**, so avoid `.opacity(_:)` in token values — the derived color isn't the one that was recorded.
+
+**Custom `Resolver` styles resolve to `nil` on Android** and render unstyled; their closures need an `EnvironmentValues`, which cannot be constructed there. Tokens built from `.colorScheme(light:dark:)`, `.sizeClass(compact:regular:)` or `.value(_:)` are unaffected.
+
+**`.tint(.primaryColor)` isn't supported on either platform.** SwiftUI's `tint(_:)` takes an `S?`, and Swift can't infer an implicit member's base through an optional generic. Resolve explicitly instead:
+
+```swift
+.tint(theme.colors.primary.resolved(colorScheme: colorScheme) ?? .accentColor)
+```
+
+**Modifier return types.** The Android overloads return `some View`, so a chain that relies on staying a `Text` (`Text(…).foregroundStyle(…).bold()`) degrades to a `View` chain there. Reorder so the `Text`-returning modifiers come first.
+
+**Apple-only projects:** if you don't use Skip, set `SKIP_ZERO=1` when resolving packages to strip every Skip dependency and plugin — ThemeKit then behaves as a plain SwiftPM package. Without it the Skip packages *resolve* but never build for Apple targets, which is the Skip-ecosystem norm.
+
+See [`docs/android-rendering.md`](docs/android-rendering.md) for the full release notes, and [rozd/theme-kit-demo](https://github.com/rozd/theme-kit-demo) for a dual-platform app with side-by-side screenshots.
 
 ## ⚙️ How It Works
 
 The generated `ThemeShapeStyle<Style>` bridges your tokens into SwiftUI's style resolution system. It holds a key path into `Theme` and resolves the correct variant at render time:
 
 ```swift
-struct ThemeShapeStyle<Style: ShapeStyle>: ShapeStyle {
+struct ThemeShapeStyle<Style: Sendable & Codable & Equatable> {
     let keyPath: KeyPath<Theme, ThemeAdaptiveStyle<Style>>
+}
 
+// The ShapeStyle conformance is conditional, and Apple-only — Skip's SwiftUI facade
+// has no resolve(in:) customization point. See Skip / Android above for what Android
+// gets instead.
+#if !os(Android)
+extension ThemeShapeStyle: ShapeStyle where Style: ShapeStyle {
     func resolve(in environment: EnvironmentValues) -> some ShapeStyle {
         environment.theme[keyPath: keyPath].resolved(in: environment)
     }
 }
+#endif
 ```
 
 This is the same `resolve(in:)` mechanism that powers SwiftUI's built-in `.primary`, `.tint`, and other environment-dependent styles. Your tokens participate in the system as first-class citizens.
