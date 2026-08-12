@@ -1,6 +1,8 @@
 import SwiftUI
 
-// MeshGradient is not available in SkipFuseUI's SwiftUI facade on Android.
+// MeshGradient is not available in SkipFuseUI's SwiftUI facade on Android; ThemeKit
+// ships a shim there (MeshGradient+Android.swift) that shares this JSON format via
+// MeshGradientCoding.
 #if !os(Android)
 
 nonisolated extension MeshGradient {
@@ -13,7 +15,7 @@ nonisolated extension MeshGradient {
         self.init(
             width: width,
             height: height,
-            points: MeshGradient.pointsFrom(width: width, height: height),
+            points: MeshGradientCoding.uniformPoints(width: width, height: height),
             colors: colors,
         )
     }
@@ -23,75 +25,51 @@ nonisolated extension MeshGradient {
 
 nonisolated extension MeshGradient: @retroactive Codable {
 
-    enum CodingKeys: String, CodingKey {
-        case width, height, colors, points
-    }
-
     public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let width = try container.decode(Int.self, forKey: .width)
-        let height = try container.decode(Int.self, forKey: .height)
-        let colors = try container.decode([Color].self, forKey: .colors)
-        let points = try container.decodeIfPresent([SIMD2<Float>].self, forKey: .points)
+        let payload = try MeshGradientCoding.decode(from: decoder)
         self.init(
-            width: width,
-            height: height,
-            points: points ?? MeshGradient.pointsFrom(width: width, height: height),
-            colors: colors,
+            width: payload.width,
+            height: payload.height,
+            points: payload.points,
+            colors: payload.colors,
         )
     }
 
     public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(width, forKey: .width)
-        try container.encode(height, forKey: .height)
-
-        switch colors {
-        case .colors(let colors):
-            try container.encode(colors, forKey: .colors)
-        case .resolvedColors(let colors):
-            try container.encode(colors, forKey: .colors)
-        @unknown default:
-            throw EncodingError.invalidValue(
-                colors,
-                EncodingError.Context(
-                    codingPath: [CodingKeys.colors],
-                    debugDescription: "Unsupported color type",
-                )
-            )
-        }
-
+        let points: [SIMD2<Float>]
         switch locations {
-        case .points(let points):
-            try container.encode(points, forKey: .points)
-        case .bezierPoints(let points):
-            try container.encode(points.map(\.position), forKey: .points)
+        case .points(let value):
+            points = value
+        case .bezierPoints(let value):
+            // Only the positions survive; bezier control points have no wire form.
+            points = value.map(\.position)
         @unknown default:
             throw EncodingError.invalidValue(
                 locations,
                 EncodingError.Context(
-                    codingPath: [CodingKeys.points],
+                    codingPath: [MeshGradientCoding.CodingKeys.points],
                     debugDescription: "Unsupported location type",
                 )
             )
         }
 
-    }
-
-    static func pointsFrom(width: Int, height: Int) -> [SIMD2<Float>] {
-        guard width > 0, height > 0 else {
-            return []
-        }
-        if width == 1 && height == 1 {
-            return [SIMD2<Float>(0.0, 0.0)]
-        }
-        return (0..<height).flatMap { row in
-            (0..<width).map { col in
-                SIMD2<Float>(
-                    width > 1 ? Float(col) / Float(width - 1) : 0.0,
-                    height > 1 ? Float(row) / Float(height - 1) : 0.0,
+        switch colors {
+        case .colors(let value):
+            try MeshGradientCoding.encode(
+                width: width, height: height, colors: value, points: points, to: encoder
+            )
+        case .resolvedColors(let value):
+            try MeshGradientCoding.encode(
+                width: width, height: height, colors: value, points: points, to: encoder
+            )
+        @unknown default:
+            throw EncodingError.invalidValue(
+                colors,
+                EncodingError.Context(
+                    codingPath: [MeshGradientCoding.CodingKeys.colors],
+                    debugDescription: "Unsupported color type",
                 )
-            }
+            )
         }
     }
 }
