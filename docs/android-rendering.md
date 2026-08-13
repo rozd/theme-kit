@@ -47,7 +47,10 @@ Text("Hello")
 - **`MeshGradient` on Android.** ThemeKit ships its own, sharing a wire format with the Apple
   conformance through an internal `MeshGradientCoding` layer so the two cannot drift. A
   `meshGradients` config previously could not compile on Android at all; it now compiles and renders
-  a degraded two-stop diagonal between the mesh's first and last colors.
+  a degraded two-stop diagonal between the mesh's first and last colors. (A real AGSL-shader mesh
+  for skip-ui/skip-fuse-ui is built and verified on forks — ThemeKit adopts it via the
+  `THEMEKIT_MESH_UPSTREAM` build gate once it ships in a Skip release; until then the shim above is
+  what consumers get.)
 - **[rozd/theme-kit-demo](https://github.com/rozd/theme-kit-demo)** — a dual-platform Skip app
   exercising every token category from one shared source tree, with iOS/Android screenshots as the
   parity baseline.

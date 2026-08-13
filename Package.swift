@@ -170,3 +170,16 @@ if Context.environment["SKIP_ZERO"] ?? "0" == "0",
     // so the Skip packages this manifest never names directly have to be pinned here too.
     package.dependencies.append(.package(path: "\(dependencyRoot)/skip-model"))
 }
+
+// Setting THEMEKIT_MESH_UPSTREAM=1 compiles ThemeKit's Android side against the real
+// MeshGradient in skip-fuse-ui (which exists only on the local forks until upstream releases,
+// so this is only meaningful together with SKIP_DEPENDENCY_ROOT) instead of the bundled
+// degraded shim in MeshGradient+Android.swift. Unset, consumers get the shim — flipping this
+// default is a post-release follow-up, not part of this plan.
+if Context.environment["THEMEKIT_MESH_UPSTREAM"] ?? "0" != "0" {
+    if let themeKit = package.targets.first(where: { $0.name == "ThemeKit" }) {
+        var settings = themeKit.swiftSettings ?? []
+        settings.append(.define("THEMEKIT_MESH_UPSTREAM"))
+        themeKit.swiftSettings = settings
+    }
+}
