@@ -141,3 +141,32 @@ if Context.environment["SKIP_ZERO"] ?? "0" != "0" {
         .plugin(name: "Generate Theme Files", targets: ["Generate Theme Files"]),
     ]
 }
+
+// Setting SKIP_DEPENDENCY_ROOT to a directory of local Skip checkouts points every Skip
+// dependency at those working copies, for developing against unreleased Skip changes.
+//
+// The rewrite is deliberately all-or-nothing: skip-fuse-ui's own manifest reads the same
+// variable and redirects every dependency whose name begins with "skip", so redirecting only
+// some of them here would leave two different declarations of the same package identity and
+// fail resolution outright.
+//
+// This runs last on purpose. The SKIP_ZERO block above matches on `.sourceControl`, and would
+// no longer recognise these dependencies once they had become `.fileSystem`.
+//
+// No fork URL appears anywhere in this manifest — only local paths, and only when the variable
+// is set — so nothing can leak into a consumer's Package.resolved.
+if Context.environment["SKIP_ZERO"] ?? "0" == "0",
+   let dependencyRoot = Context.environment["SKIP_DEPENDENCY_ROOT"] {
+    package.dependencies = package.dependencies.map { dependency in
+        guard case .sourceControl(_, let url, _) = dependency.kind,
+              let name = url.split(separator: "/").last?.split(separator: ".").first,
+              name.hasPrefix("skip") else {
+            return dependency
+        }
+        return .package(path: "\(dependencyRoot)/\(name)")
+    }
+
+    // A root package's path dependencies override transitive declarations of the same identity,
+    // so the Skip packages this manifest never names directly have to be pinned here too.
+    package.dependencies.append(.package(path: "\(dependencyRoot)/skip-model"))
+}
