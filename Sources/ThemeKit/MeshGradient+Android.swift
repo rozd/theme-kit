@@ -3,7 +3,11 @@
 // `Theme` struct references the type directly. This shim keeps such configs portable:
 // mesh tokens carry their data faithfully and render in a degraded form until real mesh
 // support lands (Skip has none today).
-#if os(Android)
+//
+// THEMEKIT_MESH_UPSTREAM swaps this shim for the real MeshGradient in the skip-fuse-ui
+// fork (see MeshGradient+AndroidUpstream.swift) — the two declare the same type name, so
+// exactly one side compiles.
+#if os(Android) && !THEMEKIT_MESH_UPSTREAM
 import SwiftUI
 
 nonisolated public struct MeshGradient: Sendable, Equatable {

@@ -269,12 +269,17 @@ Those overloads are constrained to a generated `ThemeStyleResolving` protocol, w
 | `.foregroundStyle(.primaryColor)` and friends — identical spelling | ✅ | ✅ |
 | Colors, gradients | ✅ | ✅ |
 | Shadows | ✅ | drop only — `.inner` is data |
-| Mesh gradients | ✅ | degraded — two-stop diagonal |
+| Mesh gradients | ✅ | degraded — two-stop diagonal¹ |
 | Encode theme → JSON | ✅ | `Color(hex:)` colors only |
 | `#Preview` | ✅ | ❌ |
 | Custom `Resolver` tokens | ✅ | ❌ — resolve to `nil` |
 | `.red.card` (shadow on a *SwiftUI* style) | ✅ | ❌ |
 | `.tint(.primaryColor)` | ❌ | ❌ |
+
+¹ A real mesh renderer (an AGSL shader on API 33+, this same two-stop fallback below) exists for
+skip-ui/skip-fuse-ui, built and verified on forks ahead of upstream PRs. ThemeKit keeps shipping
+the degraded shim until that lands in a Skip release, at which point the shim is deleted and the
+minimum skip-fuse-ui version bumps.
 
 ### Things worth knowing
 
