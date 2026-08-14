@@ -265,6 +265,17 @@ struct ThemeFileGeneratorTests {
         #expect(shapeStyle.content.contains("Style: ShapeStyle & Sendable & Codable"))
     }
 
+    @Test func themeShapeStyle_declaresUncheckedSendable() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: fullJSON).files
+        let shapeStyle = try #require(files.first { $0.name == "ThemeShapeStyle.swift" })
+
+        // Sendability must be asserted on the struct itself — ThemeKit deliberately
+        // ships no retroactive `KeyPath: Sendable` conformance.
+        #expect(shapeStyle.content.contains("ShapeStyle, Equatable, @unchecked Sendable"))
+        #expect(shapeStyle.content.contains("let keyPath: KeyPath<Theme, ThemeAdaptiveStyle<Style>>"))
+        #expect(!shapeStyle.content.contains("nonisolated let keyPath"))
+    }
+
     // MARK: - Config Section
 
     @Test func configSection_providesOutputPath() throws {
@@ -313,6 +324,15 @@ struct ThemeFileGeneratorTests {
         #expect(file.content.contains("func resolve(in environment: EnvironmentValues)"))
         #expect(file.content.contains("AnyShapeStyle"))
         #expect(file.content.contains("ThemeShadowedStyle: Equatable where Base: Equatable"))
+    }
+
+    @Test func themeShadowedStyle_declaresUncheckedSendable() throws {
+        let files = try ThemeFileGenerator().generate(fromJSON: shadowsOnlyJSON).files
+        let file = try #require(files.first { $0.name == "ThemeShadowedStyle.swift" })
+
+        #expect(file.content.contains("ShapeStyle, @unchecked Sendable"))
+        #expect(file.content.contains("let shadowKeyPath: KeyPath<Theme, ThemeAdaptiveStyle<Shadow>>"))
+        #expect(!file.content.contains("nonisolated let"))
     }
 
     @Test func shadowShapeStyle_containsBothStaticAndInstanceProperties() throws {
