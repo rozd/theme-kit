@@ -40,6 +40,7 @@ struct GenerateTestFixturesPlugin: BuildToolPlugin {
 
         let categoryKeys = styles.keys
         let shouldGeneratePreview = config["shouldGeneratePreview"] as? Bool ?? false
+        let androidSupport = config["androidSupport"] as? Bool ?? false
 
         // Map JSON category keys to struct names
         let categoryStructNames: [String: String] = [
@@ -54,9 +55,13 @@ struct GenerateTestFixturesPlugin: BuildToolPlugin {
         // Static files (always generated)
         files.append("ThemeShapeStyle.swift")
         files.append("Environment+Theme.swift")
-        files.append("View+ThemeStyles.swift")
         files.append("Theme.swift")
         files.append("Theme+CopyWith.swift")
+
+        // Android render path (only when androidSupport is true)
+        if androidSupport {
+            files.append("Android/View+AndroidThemeStyles.swift")
+        }
 
         // Conditional: ThemeShadowedStyle only when shadows present
         if categoryKeys.contains("shadows") {

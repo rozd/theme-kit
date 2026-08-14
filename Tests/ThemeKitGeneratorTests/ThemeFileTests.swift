@@ -62,4 +62,50 @@ struct ThemeFileTests {
 
         #expect(decoded == original)
     }
+
+    @Test func androidSupport_decodedWhenPresent() throws {
+        let json = Data("""
+        {
+            "styles": {
+                "colors": ["primary"]
+            },
+            "config": {
+                "outputPath": ".",
+                "androidSupport": true
+            }
+        }
+        """.utf8)
+
+        let themeFile = try JSONDecoder().decode(ThemeFile.self, from: json)
+        #expect(themeFile.androidSupport == true)
+    }
+
+    @Test func androidSupport_defaultsToFalseWhenAbsent() throws {
+        let json = Data("""
+        {
+            "styles": {
+                "colors": ["primary"]
+            },
+            "config": {
+                "outputPath": "."
+            }
+        }
+        """.utf8)
+
+        let themeFile = try JSONDecoder().decode(ThemeFile.self, from: json)
+        #expect(themeFile.androidSupport == false)
+    }
+
+    @Test func androidSupport_defaultsToFalseWithoutConfig() throws {
+        let json = Data("""
+        {
+            "styles": {
+                "colors": ["primary"]
+            }
+        }
+        """.utf8)
+
+        let themeFile = try JSONDecoder().decode(ThemeFile.self, from: json)
+        #expect(themeFile.androidSupport == false)
+    }
 }

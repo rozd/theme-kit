@@ -29,12 +29,12 @@ Text("Hello")
 
 ## Added
 
-- **Android render path.** The generator emits `View+ThemeStyles.swift`, containing a
-  `ThemeStyleResolving` protocol plus overloads of `foregroundStyle`, `background(_:ignoresSafeAreaEdges:)`,
+- **Android render path** (opt-in via `"androidSupport": true` in `theme.json`). The generator emits `Android/View+AndroidThemeStyles.swift`, containing an
+  `AndroidShapeStyleAdapter` protocol plus overloads of `foregroundStyle`, `background(_:ignoresSafeAreaEdges:)`,
   `background(_:in:)`, `border(_:width:)`, `Shape.fill` and `Shape.stroke(_:lineWidth:)`. Each wraps its
   content in a view that reads `@Environment` itself, because Skip's SwiftUI facade has no
   `ShapeStyle.resolve(in:)` customization point and no environment access outside a view body.
-  `ThemeStyleResolving` plays the role `ShapeStyle` plays on Apple: the namespace the token accessors
+  `AndroidShapeStyleAdapter` plays the role `ShapeStyle` plays on Apple: the namespace the token accessors
   hang off, and the constraint that lets `.surface.card` re-bind from a style to a shadowed style
   mid-chain.
 - **Theme encoding on Android.** `Color(hex:)` records a color's canonical `#RRGGBB` at construction,
@@ -65,7 +65,7 @@ Text("Hello")
 - `ThemeShadowedStyle<Base>` likewise drops its `Base: ShapeStyle` requirement, with `Equatable`
   unconditional and `ShapeStyle` conditional.
 - Generated `ShapeStyle+*.swift` files now emit two mutually exclusive blocks — the Apple
-  `extension ShapeStyle where Self == …` form and the Android `extension ThemeStyleResolving where Self == …`
+  `extension ShapeStyle where Self == …` form and the Android `extension AndroidShapeStyleAdapter where Self == …`
   form. Emitting both would be a redeclaration.
 - `Color.hexString` on macOS converts to sRGB before reading components. Previously, calling it on a
   catalog color (`Color.red`) raised an Objective-C exception that **aborted the process** instead of
@@ -79,7 +79,7 @@ Text("Hello")
 | Inner shadows | Data only. Skip's SwiftUI facade has no inner-shadow equivalent; drop shadows render normally. |
 | Mesh gradients | Degraded to a two-stop diagonal. Real mesh rendering needs upstream Compose work. |
 | Encoding `Color(red:green:blue:)` colors | Fails. Only hex-constructed colors carry a recorded spelling. Decode → `copyWith` → encode — the loop remote themes use — is fully covered. |
-| `.red.card` (a shadow chained onto a *SwiftUI* style) | Unavailable. Letting `Color` conform to `ThemeStyleResolving` would make `.foregroundStyle(.red)` ambiguous with Skip's own modifier. |
+| `.red.card` (a shadow chained onto a *SwiftUI* style) | Unavailable. Letting `Color` conform to `AndroidShapeStyleAdapter` would make `.foregroundStyle(.red)` ambiguous with Skip's own modifier. |
 | Modifier return types | The overloads return `some View`, so `Text(…).foregroundStyle(…).bold()` degrades to a `View` chain. Put the `Text`-returning modifiers first. |
 | `#Preview` | Unavailable — no macros in Skip's SwiftUI facade. |
 | Alpha in hex values | The `#RRGGBB` wire format has no alpha channel, so avoid `.opacity(_:)` in token values. |

@@ -2,7 +2,7 @@ nonisolated public struct ShapeStyleExtensionGenerator: Sendable {
 
     nonisolated public init() {}
 
-    nonisolated public func generate(category: ThemeCategory, tokens: [ThemeToken]) -> GeneratedFile {
+    nonisolated public func generate(category: ThemeCategory, tokens: [ThemeToken], androidSupport: Bool = false) -> GeneratedFile {
         let staticProperties = tokens.map { token in
             "    public static var \(token.style): Self { .init(keyPath: \\.\(category.propertyName).\(token.name)) }"
         }.joined(separator: "\n")
@@ -13,53 +13,77 @@ nonisolated public struct ShapeStyleExtensionGenerator: Sendable {
         import SwiftUI
         import ThemeKit
 
-        // The two blocks are mutually exclusive — emitting both would be a redeclaration.
-        // ThemeStyleResolving is the Android stand-in for ShapeStyle as a namespace, so the
-        // accessors keep the same spelling and the same chaining behaviour on both platforms.
-        #if !os(Android)
-        nonisolated extension ShapeStyle where Self == ThemeShapeStyle<\(category.styleType)> {
-        \(staticProperties)
-        }
 
         """
 
-        if category == .shadows {
-            let instanceProperties = tokens.map { token in
-                "    public var \(token.style): ThemeShadowedStyle<Self> { .init(base: self, shadowKeyPath: \\.\(category.propertyName).\(token.name)) }"
-            }.joined(separator: "\n")
-
+        if androidSupport {
             content += """
-
-            nonisolated extension ShapeStyle {
-            \(instanceProperties)
+            #if !os(Android)
+            nonisolated extension ShapeStyle where Self == ThemeShapeStyle<\(category.styleType)> {
+            \(staticProperties)
             }
 
             """
-        }
 
-        content += """
-        #else
-        nonisolated extension ThemeStyleResolving where Self == ThemeShapeStyle<\(category.styleType)> {
-        \(staticProperties)
-        }
+            if category == .shadows {
+                let instanceProperties = tokens.map { token in
+                    "    public var \(token.style): ThemeShadowedStyle<Self> { .init(base: self, shadowKeyPath: \\.\(category.propertyName).\(token.name)) }"
+                }.joined(separator: "\n")
 
-        """
+                content += """
 
-        if category == .shadows {
-            let instanceProperties = tokens.map { token in
-                "    public var \(token.style): ThemeShadowedStyle<Self> { .init(base: self, shadowKeyPath: \\.\(category.propertyName).\(token.name)) }"
-            }.joined(separator: "\n")
+                nonisolated extension ShapeStyle {
+                \(instanceProperties)
+                }
+
+                """
+            }
 
             content += """
-
-            nonisolated extension ThemeStyleResolving {
-            \(instanceProperties)
+            #else
+            nonisolated extension AndroidShapeStyleAdapter where Self == ThemeShapeStyle<\(category.styleType)> {
+            \(staticProperties)
             }
 
             """
-        }
 
-        content += "#endif\n"
+            if category == .shadows {
+                let instanceProperties = tokens.map { token in
+                    "    public var \(token.style): ThemeShadowedStyle<Self> { .init(base: self, shadowKeyPath: \\.\(category.propertyName).\(token.name)) }"
+                }.joined(separator: "\n")
+
+                content += """
+
+                nonisolated extension AndroidShapeStyleAdapter {
+                \(instanceProperties)
+                }
+
+                """
+            }
+
+            content += "#endif\n"
+        } else {
+            content += """
+            nonisolated extension ShapeStyle where Self == ThemeShapeStyle<\(category.styleType)> {
+            \(staticProperties)
+            }
+
+            """
+
+            if category == .shadows {
+                let instanceProperties = tokens.map { token in
+                    "    public var \(token.style): ThemeShadowedStyle<Self> { .init(base: self, shadowKeyPath: \\.\(category.propertyName).\(token.name)) }"
+                }.joined(separator: "\n")
+
+                content += """
+
+                nonisolated extension ShapeStyle {
+                \(instanceProperties)
+                }
+
+                """
+            }
+        }
 
         return GeneratedFile(name: "ShapeStyle+\(category.structName).swift", content: content)
     }

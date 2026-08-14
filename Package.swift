@@ -174,8 +174,13 @@ if Context.environment["SKIP_ZERO"] ?? "0" == "0",
 // Setting THEMEKIT_MESH_UPSTREAM=1 compiles ThemeKit's Android side against the real
 // MeshGradient in skip-fuse-ui (which exists only on the local forks until upstream releases,
 // so this is only meaningful together with SKIP_DEPENDENCY_ROOT) instead of the bundled
-// degraded shim in MeshGradient+Android.swift. Unset, consumers get the shim — flipping this
-// default is a post-release follow-up, not part of this plan.
+// degraded shim in Sources/ThemeKit/Android/MeshGradient+Android.swift. Unset, consumers get
+// the shim — flipping this default is a post-release follow-up, not part of this plan.
+//
+// Note: the env-var cannot be set from Xcode — the Android build reaches this manifest through
+// Xcode's Run Script phase → `skip gradle` → a Gradle task that execs `swift build`, and the
+// variable does not survive that chain. When working against the forks from Xcode, temporarily
+// replace the condition with `if true` (do not commit that).
 if Context.environment["THEMEKIT_MESH_UPSTREAM"] ?? "0" != "0" {
     if let themeKit = package.targets.first(where: { $0.name == "ThemeKit" }) {
         var settings = themeKit.swiftSettings ?? []

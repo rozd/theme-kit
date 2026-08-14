@@ -4,17 +4,21 @@ nonisolated public struct ThemeFileGenerator: Sendable {
 
     nonisolated public init() {}
 
-    nonisolated public func generate(from config: ThemeConfig) -> [GeneratedFile] {
+    nonisolated public func generate(from config: ThemeConfig, androidSupport: Bool = false) -> [GeneratedFile] {
         var files: [GeneratedFile] = []
 
         // Static files (same regardless of config)
-        files.append(ThemeShapeStyleGenerator().generate())
-        files.append(EnvironmentThemeGenerator().generate())
-        files.append(ThemeViewModifiersGenerator().generate(hasShadows: config.categories.contains(.shadows)))
+        files.append(ThemeShapeStyleGenerator().generate(androidSupport: androidSupport))
+        files.append(EnvironmentThemeGenerator().generate(androidSupport: androidSupport))
+
+        // Android render path (Android-only)
+        if androidSupport {
+            files.append(AndroidViewModifiersGenerator().generate(hasShadows: config.categories.contains(.shadows)))
+        }
 
         // Conditional static files
         if config.categories.contains(.shadows) {
-            files.append(ThemeShadowedStyleGenerator().generate())
+            files.append(ThemeShadowedStyleGenerator().generate(androidSupport: androidSupport))
         }
 
         // Theme root struct
@@ -29,7 +33,7 @@ nonisolated public struct ThemeFileGenerator: Sendable {
 
             files.append(CategoryStructGenerator().generate(category: category, tokens: tokens))
             files.append(CopyWithGenerator().generateForCategory(category: category, tokens: tokens))
-            files.append(ShapeStyleExtensionGenerator().generate(category: category, tokens: tokens))
+            files.append(ShapeStyleExtensionGenerator().generate(category: category, tokens: tokens, androidSupport: androidSupport))
         }
 
         // Defaults scaffold (editable by app dev)
@@ -40,11 +44,11 @@ nonisolated public struct ThemeFileGenerator: Sendable {
 
     nonisolated public func generate(fromJSON data: Data) throws -> (files: [GeneratedFile], outputPath: String) {
         let themeFile = try JSONDecoder().decode(ThemeFile.self, from: data)
-        var files = generate(from: themeFile.styles)
+        var files = generate(from: themeFile.styles, androidSupport: themeFile.androidSupport)
 
         // Conditionally add preview file
         if themeFile.shouldGeneratePreview {
-            files.append(ThemePreviewGenerator().generate(from: themeFile.styles))
+            files.append(ThemePreviewGenerator().generate(from: themeFile.styles, androidSupport: themeFile.androidSupport))
         }
 
         return (files, themeFile.resolvedOutputPath)

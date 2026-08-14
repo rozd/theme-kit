@@ -50,6 +50,18 @@ struct ThemePreviewGeneratorTests {
 
     @Test func generate_containsPreviewMacro() {
         let file = ThemePreviewGenerator().generate(from: colorsOnlyConfig)
+        #expect(file.content.contains("#Preview"))
+        #expect(file.content.contains("ThemePreview()"))
+    }
+
+    @Test func generate_default_ungatedPreview() {
+        let file = ThemePreviewGenerator().generate(from: colorsOnlyConfig, androidSupport: false)
+        #expect(file.content.contains("#Preview"))
+        #expect(!file.content.contains("#if !os(Android)"), "Default should not gate #Preview")
+    }
+
+    @Test func generate_androidSupport_gatesPreview() {
+        let file = ThemePreviewGenerator().generate(from: colorsOnlyConfig, androidSupport: true)
         #expect(file.content.contains("#if !os(Android)"))
         #expect(file.content.contains("#Preview"))
         #expect(file.content.contains("ThemePreview()"))

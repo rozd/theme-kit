@@ -16,9 +16,13 @@ nonisolated public struct ThemeFile: Sendable, Codable, Equatable {
         /// When true, generates a Theme+Preview.swift file containing a SwiftUI preview view.
         public let shouldGeneratePreview: Bool?
 
-        nonisolated public init(outputPath: String, shouldGeneratePreview: Bool? = nil) {
+        /// When true, generates Skip/Android compatibility code (Android render path, gated Apple conformances).
+        public let androidSupport: Bool?
+
+        nonisolated public init(outputPath: String, shouldGeneratePreview: Bool? = nil, androidSupport: Bool? = nil) {
             self.outputPath = outputPath
             self.shouldGeneratePreview = shouldGeneratePreview
+            self.androidSupport = androidSupport
         }
     }
 
@@ -35,6 +39,11 @@ nonisolated public struct ThemeFile: Sendable, Codable, Equatable {
     /// Whether to generate a preview file, defaulting to false.
     nonisolated public var shouldGeneratePreview: Bool {
         config?.shouldGeneratePreview ?? false
+    }
+
+    /// Whether to generate Skip/Android compatibility code, defaulting to false.
+    nonisolated public var androidSupport: Bool {
+        config?.androidSupport ?? false
     }
 }
 

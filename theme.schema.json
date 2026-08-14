@@ -43,6 +43,10 @@
         "shouldGeneratePreview": {
           "type": "boolean",
           "description": "To generate a Theme+Preview.swift with all tokens as visual palette."
+        },
+        "androidSupport": {
+          "type": "boolean",
+          "description": "Generate Skip/Android compatibility code (Android render path, gated Apple conformances). Defaults to false: without it, output is pure Apple SwiftUI."
         }
       },
       "required": ["outputPath"],

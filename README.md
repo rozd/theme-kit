@@ -239,7 +239,19 @@ let theme = try JSONDecoder().decode(Theme.self, from: data)
 
 ## 🤖 Skip / Android
 
-ThemeKit works with [Skip](https://skip.dev) in **native (Skip Fuse) mode**, and the call sites are the same ones you write on Apple:
+ThemeKit works with [Skip](https://skip.dev) in **native (Skip Fuse) mode**, and Android generation is **opt-in** — by default, generated output is pure Apple SwiftUI. Enable it by adding `"androidSupport": true` to your `theme.json` config:
+
+```json
+{
+  "styles": { /* tokens */ },
+  "config": {
+    "outputPath": ".",
+    "androidSupport": true
+  }
+}
+```
+
+With it enabled, the call sites are the same ones you write on Apple:
 
 ```swift
 // This file compiles and renders on iOS and Android. No #if, no manual resolution.
@@ -257,7 +269,7 @@ Add ThemeKit to your Skip app the way you'd add any Skip module — the package 
 
 On Apple, tokens resolve through `ShapeStyle.resolve(in:)`. Skip's SwiftUI facade has no such customization point, and environment values can't be read outside a view body there — so on Android the generator emits a small parallel surface instead: overloads of the style-taking modifiers (`foregroundStyle`, `background`, `border`, `fill`, `stroke`) that wrap your content in a view which reads `@Environment` itself.
 
-Those overloads are constrained to a generated `ThemeStyleResolving` protocol, which plays exactly the role `ShapeStyle` plays on Apple — the namespace your token accessors hang off, and the constraint that lets `.surface.card` re-bind from a style to a shadowed style mid-chain. Only ThemeKit's own types conform to it, so the overloads can never be ambiguous with Skip's.
+Those overloads are constrained to a generated `AndroidShapeStyleAdapter` protocol, which plays exactly the role `ShapeStyle` plays on Apple — the namespace your token accessors hang off, and the constraint that lets `.surface.card` re-bind from a style to a shadowed style mid-chain. Only ThemeKit's own types conform to it, so the overloads can never be ambiguous with Skip's.
 
 </details>
 
