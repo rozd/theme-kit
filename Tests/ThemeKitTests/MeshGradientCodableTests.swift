@@ -347,6 +347,218 @@ struct MeshGradientCodableTests {
         #expect(points[1][0].floatValue == 1.0)
     }
 
+    // MARK: - Resolved colors encoding
+
+    // `MeshGradient.colors` has two cases and `encode(to:)` handles both. `.colors` routes
+    // through ThemeKit's retroactive `Color: Codable` (hex strings); `.resolvedColors` routes
+    // through SwiftUI's own `Color.Resolved: Codable`, which is a different shape. These tests
+    // pin that difference so it can't change unnoticed.
+
+    private func resolvedRGBW() -> [Color.Resolved] {
+        [
+            Color(hex: 0xFF0000).resolve(in: EnvironmentValues()),
+            Color(hex: 0x00FF00).resolve(in: EnvironmentValues()),
+            Color(hex: 0x0000FF).resolve(in: EnvironmentValues()),
+            Color(hex: 0xFFFFFF).resolve(in: EnvironmentValues()),
+        ]
+    }
+
+    private func resolvedColorMesh() -> MeshGradient {
+        MeshGradient(
+            width: 2,
+            height: 2,
+            locations: .points(MeshGradientCoding.uniformPoints(width: 2, height: 2)),
+            colors: .resolvedColors(resolvedRGBW())
+        )
+    }
+
+    @Test func encode_resolvedColors_producesAllExpectedKeys() throws {
+        let encoded = try jsonEncode(resolvedColorMesh())
+
+        #expect(encoded["width"] as? Int == 2)
+        #expect(encoded["height"] as? Int == 2)
+        #expect(encoded["colors"] != nil)
+        #expect(encoded["points"] != nil)
+    }
+
+    @Test func encode_resolvedColors_producesRGBAComponentArrays() throws {
+        let encoded = try jsonEncode(resolvedColorMesh())
+        let colors = try #require(encoded["colors"] as? [[NSNumber]])
+
+        // Not hex strings: Color.Resolved encodes as [red, green, blue, opacity].
+        #expect(colors.count == 4)
+        for components in colors {
+            #expect(components.count == 4)
+        }
+        #expect(colors[0].map(\.floatValue) == [1, 0, 0, 1])
+        #expect(colors[1].map(\.floatValue) == [0, 1, 0, 1])
+        #expect(colors[2].map(\.floatValue) == [0, 0, 1, 1])
+        #expect(colors[3].map(\.floatValue) == [1, 1, 1, 1])
+    }
+
+    @Test func encode_resolvedColors_stillEncodesPointsAndDimensions() throws {
+        let encoded = try jsonEncode(resolvedColorMesh())
+        let points = try #require(encoded["points"] as? [[NSNumber]])
+
+        #expect(points.count == 4)
+        #expect(points[0].map(\.floatValue) == [0.0, 0.0])
+        #expect(points[3].map(\.floatValue) == [1.0, 1.0])
+    }
+
+    @Test func encode_resolvedColors_isNotDecodableByThemeKit() throws {
+        // Documents an asymmetry rather than endorsing it: decoding expects `[Color]`, which
+        // reads hex strings, so a resolved-colour payload cannot be read back. Meshes meant
+        // for the wire must be built with `[Color]`.
+        let data = try JSONEncoder().encode(resolvedColorMesh())
+        #expect(throws: DecodingError.self) {
+            _ = try JSONDecoder().decode(MeshGradient.self, from: data)
+        }
+    }
+
+    // MARK: - Encoded structure
+
+    @Test func encode_producesExactlyTheWireFormatKeys() throws {
+        let mesh = MeshGradient(
+            width: 2,
+            height: 2,
+            colors: [Color(hex: 0xFF0000), Color(hex: 0x00FF00), Color(hex: 0x0000FF), Color(hex: 0xFFFFFF)]
+        )
+        let encoded = try jsonEncode(mesh)
+        #expect(Set(encoded.keys) == ["width", "height", "colors", "points"])
+    }
+
+    @Test func encode_dropsBackgroundSmoothingAndColorSpace() throws {
+        // The wire format carries no such fields, so meshes differing only in them are
+        // indistinguishable once encoded — a documented lossiness, not an oversight.
+        let points = MeshGradientCoding.uniformPoints(width: 2, height: 2)
+        let colors: [Color] = [
+            Color(hex: 0xFF0000), Color(hex: 0x00FF00), Color(hex: 0x0000FF), Color(hex: 0xFFFFFF),
+        ]
+        let plain = MeshGradient(width: 2, height: 2, points: points, colors: colors)
+        let decorated = MeshGradient(
+            width: 2,
+            height: 2,
+            points: points,
+            colors: colors,
+            background: .black,
+            smoothsColors: false,
+            colorSpace: .perceptual
+        )
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        #expect(try encoder.encode(plain) == encoder.encode(decorated))
+    }
+
+    @Test func encode_pointsAreRowMajor_forNonSquareGrid() throws {
+        let mesh = MeshGradient(
+            width: 3,
+            height: 2,
+            colors: [
+                Color(hex: 0xFF0000), Color(hex: 0x00FF00), Color(hex: 0x0000FF),
+                Color(hex: 0xFFFF00), Color(hex: 0x00FFFF), Color(hex: 0xFFFFFF),
+            ]
+        )
+        let encoded = try jsonEncode(mesh)
+        let points = try #require(encoded["points"] as? [[NSNumber]])
+
+        // Rows vary slowest, columns fastest.
+        #expect(points.map { $0.map(\.floatValue) } == [
+            [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
+            [0.0, 1.0], [0.5, 1.0], [1.0, 1.0],
+        ])
+    }
+
+    @Test func encode_pointCountMatchesGridSize() throws {
+        let colors = (0..<12).map { Color(hex: 0x101010 * $0) }
+        let mesh = MeshGradient(width: 4, height: 3, colors: colors)
+        let encoded = try jsonEncode(mesh)
+
+        let points = try #require(encoded["points"] as? [[NSNumber]])
+        #expect(points.count == 12)
+        let encodedColors = try #require(encoded["colors"] as? [String])
+        #expect(encodedColors.count == 12)
+    }
+
+    @Test func encode_1x1_producesSinglePointAndColor() throws {
+        let mesh = MeshGradient(width: 1, height: 1, colors: [Color(hex: 0xFF0000)])
+        let encoded = try jsonEncode(mesh)
+
+        #expect(encoded["width"] as? Int == 1)
+        #expect(encoded["height"] as? Int == 1)
+        #expect(try #require(encoded["colors"] as? [String]) == ["#FF0000"])
+        let points = try #require(encoded["points"] as? [[NSNumber]])
+        #expect(points.count == 1)
+        #expect(points[0].map(\.floatValue) == [0.0, 0.0])
+    }
+
+    @Test func encode_explicitNonUniformPoints_preservesExactValues() throws {
+        // Built directly rather than decoded first, so the encode path is what's under test.
+        let mesh = MeshGradient(
+            width: 2,
+            height: 2,
+            points: [
+                SIMD2<Float>(0.0, 0.25), SIMD2<Float>(0.75, 0.0),
+                SIMD2<Float>(0.25, 1.0), SIMD2<Float>(1.0, 0.5),
+            ],
+            colors: [Color(hex: 0xFF0000), Color(hex: 0x00FF00), Color(hex: 0x0000FF), Color(hex: 0xFFFFFF)]
+        )
+        let encoded = try jsonEncode(mesh)
+        let points = try #require(encoded["points"] as? [[NSNumber]])
+
+        #expect(points.map { $0.map(\.floatValue) } == [
+            [0.0, 0.25], [0.75, 0.0],
+            [0.25, 1.0], [1.0, 0.5],
+        ])
+    }
+
+    // MARK: - Encoder independence
+
+    private struct MeshBox: Codable {
+        let name: String
+        let mesh: MeshGradient
+    }
+
+    @Test func encode_nestedInAnotherType_writesAKeyedSubtree() throws {
+        let box = MeshBox(
+            name: "hero",
+            mesh: MeshGradient(
+                width: 2,
+                height: 2,
+                colors: [Color(hex: 0xFF0000), Color(hex: 0x00FF00), Color(hex: 0x0000FF), Color(hex: 0xFFFFFF)]
+            )
+        )
+        let data = try JSONEncoder().encode(box)
+        let outer = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+        #expect(outer["name"] as? String == "hero")
+        let mesh = try #require(outer["mesh"] as? [String: Any])
+        #expect(mesh["width"] as? Int == 2)
+        #expect(try #require(mesh["colors"] as? [String]).count == 4)
+
+        let decoded = try JSONDecoder().decode(MeshBox.self, from: data)
+        #expect(decoded.name == "hero")
+        #expect(decoded.mesh.width == 2)
+        #expect(decoded.mesh.height == 2)
+    }
+
+    @Test func encode_withPropertyListEncoder_roundTrips() throws {
+        // `encode(to:)` talks to `Encoder`, not to JSON specifically.
+        let mesh = MeshGradient(
+            width: 3,
+            height: 2,
+            colors: [
+                Color(hex: 0xFF0000), Color(hex: 0x00FF00), Color(hex: 0x0000FF),
+                Color(hex: 0xFFFF00), Color(hex: 0x00FFFF), Color(hex: 0xFFFFFF),
+            ]
+        )
+        let data = try PropertyListEncoder().encode(mesh)
+        let decoded = try PropertyListDecoder().decode(MeshGradient.self, from: data)
+
+        #expect(decoded.width == 3)
+        #expect(decoded.height == 2)
+    }
+
     // MARK: - Point grid generation
 
     @Test func convenienceInit_producesCorrectPointGrid() {
