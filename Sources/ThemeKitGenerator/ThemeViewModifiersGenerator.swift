@@ -94,17 +94,7 @@ nonisolated public struct ThemeViewModifiersGenerator: Sendable {
                 let rendering = style.themeRendering(
                     theme: theme, colorScheme: colorScheme, sizeClass: sizeClass
                 )
-                if let shadow = rendering.shadow {
-                    styled(rendering)
-                        .shadow(
-                            color: shadow.color ?? Color(.sRGBLinear, white: 0, opacity: 0.33),
-                            radius: shadow.radius,
-                            x: shadow.x,
-                            y: shadow.y
-                        )
-                } else {
-                    styled(rendering)
-                }
+                styled(rendering).themeShadow(rendering.shadow)
             }
 
             @ViewBuilder
@@ -141,9 +131,19 @@ nonisolated public struct ThemeViewModifiersGenerator: Sendable {
                     theme: theme, colorScheme: colorScheme, sizeClass: sizeClass
                 )
                 if let shapeStyle = rendering.shapeStyle {
-                    content.background(shapeStyle, in: shape, fillStyle: fillStyle)
+                    content.background {
+                        // The shadow is applied to the filled shape, not to content. SkipUI's `.shadow` is
+                        // a colour matrix that silhouettes every non-transparent pixel, so shadowing content
+                        // would halo the text inside the card and compose the subtree twice. Applying it to
+                        // the fill matches Apple's `base.shadow(_:)` semantics.
+                        shape.fill(shapeStyle, style: fillStyle)
+                            .themeShadow(rendering.shadow)
+                    }
                 } else {
-                    content
+                    // With no fill there is no shape to cast a shadow, so fall back to shadowing the
+                    // content — exactly what `background(_:)` does with a shadow-only token. The point
+                    // is that the shadow is never silently dropped.
+                    content.themeShadow(rendering.shadow)
                 }
             }
         }
@@ -169,17 +169,7 @@ nonisolated public struct ThemeViewModifiersGenerator: Sendable {
                 let rendering = style.themeRendering(
                     theme: theme, colorScheme: colorScheme, sizeClass: sizeClass
                 )
-                if let shadow = rendering.shadow {
-                    filled(rendering)
-                        .shadow(
-                            color: shadow.color ?? Color(.sRGBLinear, white: 0, opacity: 0.33),
-                            radius: shadow.radius,
-                            x: shadow.x,
-                            y: shadow.y
-                        )
-                } else {
-                    filled(rendering)
-                }
+                filled(rendering).themeShadow(rendering.shadow)
             }
 
             @ViewBuilder

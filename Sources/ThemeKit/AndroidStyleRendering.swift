@@ -92,4 +92,39 @@ extension Shadow: AndroidRenderableStyle {
         }
     }
 }
+
+// MARK: - Shadow application
+
+extension AndroidShadow {
+    /// The color to use when the shadow's color is nil.
+    ///
+    /// SwiftUI's `View.shadow` uses this literal when no color is provided. It belongs
+    /// in ThemeKit rather than in the generator template because it is a type property
+    /// (not configuration-dependent) and fixing it does not require app code regeneration.
+    nonisolated public var resolvedColor: Color {
+        color ?? Color(.sRGBLinear, white: 0, opacity: 0.33)
+    }
+}
+
+extension View {
+    /// Applies a drop shadow, or returns self if the shadow is nil.
+    ///
+    /// This lives in ThemeKit rather than in the generator template because it centralizes
+    /// shadow application logic (including default color resolution) and testing it does not
+    /// require app code regeneration. It ensures every shadow-capable token path applies
+    /// the shadow consistently.
+    @ViewBuilder
+    nonisolated public func themeShadow(_ shadow: AndroidShadow?) -> some View {
+        if let shadow {
+            self.shadow(
+                color: shadow.resolvedColor,
+                radius: shadow.radius,
+                x: shadow.x,
+                y: shadow.y
+            )
+        } else {
+            self
+        }
+    }
+}
 #endif
