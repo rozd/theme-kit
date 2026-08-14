@@ -19,7 +19,7 @@ ThemeKit gives your app a design token system that works exactly like SwiftUI's 
 - 🪄 **Easy Setup** — declare tokens in JSON, run the plugin once, fill in your colors, done. **Zero imports** required in your app code.
 - 📖 **Transparent Logic** — the thin core and generated files are easy to read. Each file has a clear, specific role that is obvious at a glance.
 - 🎛️ **Full Control** — generated files live in your project, fully readable and yours to extend.
-- 🤖 **Skip / Android Ready** — the same call sites render on Android with [Skip](https://skip.dev) (native/Fuse mode). `.foregroundStyle(.primaryColor)` is spelled identically on both platforms — no `#if os(Android)`, no manual resolution.
+- 🤖 **Skip / Android Ready** — opt in with `"androidSupport": true` and the same call sites render on Android with [Skip](https://skip.dev) (native/Fuse mode). `.foregroundStyle(.primaryColor)` is spelled identically on both platforms — no `#if os(Android)`, no manual resolution. Off by default: generated output stays pure Apple SwiftUI.
 
 ## 🍿 Demo
 
@@ -288,10 +288,23 @@ Those overloads are constrained to a generated `AndroidShapeStyleAdapter` protoc
 | `.red.card` (shadow on a *SwiftUI* style) | ✅ | ❌ |
 | `.tint(.primaryColor)` | ❌ | ❌ |
 
-¹ A real mesh renderer (an AGSL shader on API 33+, this same two-stop fallback below) exists for
-skip-ui/skip-fuse-ui, built and verified on forks ahead of upstream PRs. ThemeKit keeps shipping
-the degraded shim until that lands in a Skip release, at which point the shim is deleted and the
-minimum skip-fuse-ui version bumps.
+¹ A real AGSL-shader mesh renderer exists for skip-ui/skip-fuse-ui, built and verified on forks
+ahead of upstream PRs — see [Version requirements](#version-requirements).
+
+### Rendering fidelity
+
+These are Skip/Compose bridge behaviors, not ThemeKit ones — but they surface in ThemeKit-shaped
+screenshots, so they're worth knowing before you file a bug against a token.
+
+| SwiftUI behavior | On Android |
+|---|---|
+| `Gradient.colorSpace(.perceptual)` | silent no-op — sRGB interpolation |
+| `AngularGradient` start/end angles | ignored |
+| `EllipticalGradient` | approximated by a radial gradient |
+| Gradient on `Image` / `Button` tint | color-only consumers — falls back to `Color.primary` (`Text` does render gradients) |
+| Materials, glass effects | not present in the bridge |
+| SF Symbols outside Skip's ~324 Material mappings | placeholder glyph, and the tint is ignored |
+| `.colorScheme(.dark)` on a subtree | ThemeKit tokens honour it; SwiftUI's built-in palette (`Color.red`…) reads the system theme and ignores it |
 
 ### Things worth knowing
 
@@ -315,6 +328,19 @@ The hex format is `#RRGGBB` with **no alpha channel**, so avoid `.opacity(_:)` i
 **Modifier return types.** The Android overloads return `some View`, so a chain that relies on staying a `Text` (`Text(…).foregroundStyle(…).bold()`) degrades to a `View` chain there. Reorder so the `Text`-returning modifiers come first.
 
 **Apple-only projects:** if you don't use Skip, set `SKIP_ZERO=1` when resolving packages to strip every Skip dependency and plugin — ThemeKit then behaves as a plain SwiftPM package. Without it the Skip packages *resolve* but never build for Apple targets, which is the Skip-ecosystem norm.
+
+### Version requirements
+
+| ThemeKit capability | Requires |
+|---|---|
+| Everything in the support matrix above | `skip` ≥ 1.9.5, `skip-fuse-ui` ≥ 1.18.1 — the current floor |
+| Gradient decode without ThemeKit's workaround | a skip-fuse-ui release with a public `Gradient.Stop` init — not released yet |
+| Real mesh gradients (AGSL shader, API 33+) | a skip-ui/skip-fuse-ui release with `MeshGradient` — not released yet |
+| Inner shadows on fills | no upstream design yet |
+
+The unreleased rows are already covered by shipped workarounds, so nothing fails to build on
+today's Skip — they bound fidelity, not compilation. When each lands, ThemeKit drops the
+workaround and raises the floor in the same release.
 
 See [`docs/android-rendering.md`](docs/android-rendering.md) for the full release notes, and [rozd/theme-kit-demo](https://github.com/rozd/theme-kit-demo) for a dual-platform app with side-by-side screenshots.
 
