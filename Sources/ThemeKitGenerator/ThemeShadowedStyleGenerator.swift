@@ -10,9 +10,14 @@ nonisolated public struct ThemeShadowedStyleGenerator: Sendable {
             import SwiftUI
             import ThemeKit
 
-            nonisolated public struct ThemeShadowedStyle<Base: Sendable>: Sendable {
-                nonisolated let base: Base
-                nonisolated let shadowKeyPath: KeyPath<Theme, ThemeAdaptiveStyle<Shadow>>
+            // `@unchecked Sendable` because the stored `shadowKeyPath` is a read-only
+            // `KeyPath` over the `Sendable` `Theme` type. Sendability is asserted
+            // here rather than through a blanket retroactive `KeyPath: Sendable`
+            // conformance, which would leak into every consumer and conflict with
+            // libraries (e.g. TCA) that manage key-path sendability themselves.
+            nonisolated public struct ThemeShadowedStyle<Base: Sendable>: @unchecked Sendable {
+                let base: Base
+                let shadowKeyPath: KeyPath<Theme, ThemeAdaptiveStyle<Shadow>>
 
                 nonisolated public init(base: Base, shadowKeyPath: KeyPath<Theme, ThemeAdaptiveStyle<Shadow>>) {
                     self.base = base
@@ -43,9 +48,14 @@ nonisolated public struct ThemeShadowedStyleGenerator: Sendable {
             import SwiftUI
             import ThemeKit
 
-            nonisolated public struct ThemeShadowedStyle<Base: ShapeStyle>: ShapeStyle {
-                nonisolated let base: Base
-                nonisolated let shadowKeyPath: KeyPath<Theme, ThemeAdaptiveStyle<Shadow>>
+            // `@unchecked Sendable` because the stored `shadowKeyPath` is a read-only
+            // `KeyPath` over the `Sendable` `Theme` type. Sendability is asserted
+            // here rather than through a blanket retroactive `KeyPath: Sendable`
+            // conformance, which would leak into every consumer and conflict with
+            // libraries (e.g. TCA) that manage key-path sendability themselves.
+            nonisolated public struct ThemeShadowedStyle<Base: ShapeStyle>: ShapeStyle, @unchecked Sendable {
+                let base: Base
+                let shadowKeyPath: KeyPath<Theme, ThemeAdaptiveStyle<Shadow>>
 
                 nonisolated public init(base: Base, shadowKeyPath: KeyPath<Theme, ThemeAdaptiveStyle<Shadow>>) {
                     self.base = base

@@ -10,8 +10,13 @@ nonisolated public struct ThemeShapeStyleGenerator: Sendable {
             import SwiftUI
             import ThemeKit
 
-            nonisolated public struct ThemeShapeStyle<Style: Sendable & Codable & Equatable>: Equatable, Sendable {
-                nonisolated let keyPath: KeyPath<Theme, ThemeAdaptiveStyle<Style>>
+            // `@unchecked Sendable` because the stored `keyPath` is a read-only
+            // `KeyPath` over the `Sendable` `Theme` type. Sendability is asserted
+            // here rather than through a blanket retroactive `KeyPath: Sendable`
+            // conformance, which would leak into every consumer and conflict with
+            // libraries (e.g. TCA) that manage key-path sendability themselves.
+            nonisolated public struct ThemeShapeStyle<Style: Sendable & Codable & Equatable>: Equatable, @unchecked Sendable {
+                let keyPath: KeyPath<Theme, ThemeAdaptiveStyle<Style>>
 
                 nonisolated public init(keyPath: KeyPath<Theme, ThemeAdaptiveStyle<Style>>) {
                     self.keyPath = keyPath
@@ -34,8 +39,13 @@ nonisolated public struct ThemeShapeStyleGenerator: Sendable {
             import SwiftUI
             import ThemeKit
 
-            nonisolated public struct ThemeShapeStyle<Style: ShapeStyle & Sendable & Codable & Equatable>: ShapeStyle, Equatable {
-                nonisolated let keyPath: KeyPath<Theme, ThemeAdaptiveStyle<Style>>
+            // `@unchecked Sendable` because the stored `keyPath` is a read-only
+            // `KeyPath` over the `Sendable` `Theme` type. Sendability is asserted
+            // here rather than through a blanket retroactive `KeyPath: Sendable`
+            // conformance, which would leak into every consumer and conflict with
+            // libraries (e.g. TCA) that manage key-path sendability themselves.
+            nonisolated public struct ThemeShapeStyle<Style: ShapeStyle & Sendable & Codable & Equatable>: ShapeStyle, Equatable, @unchecked Sendable {
+                let keyPath: KeyPath<Theme, ThemeAdaptiveStyle<Style>>
 
                 nonisolated public init(keyPath: KeyPath<Theme, ThemeAdaptiveStyle<Style>>) {
                     self.keyPath = keyPath
