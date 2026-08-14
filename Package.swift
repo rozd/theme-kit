@@ -23,9 +23,11 @@ let package = Package(
             targets: ["Generate Theme Files"]
         ),
     ],
+    // These floors are the versions the Android path is actually verified against, and they are
+    // the ones README's "Version requirements" table quotes — keep the two in sync.
     dependencies: [
         .package(url: "https://source.skip.tools/skip.git", from: "1.9.5"),
-        .package(url: "https://source.skip.tools/skip-fuse-ui.git", from: "1.0.0"),
+        .package(url: "https://source.skip.tools/skip-fuse-ui.git", from: "1.18.1"),
     ],
     targets: [
         .target(
