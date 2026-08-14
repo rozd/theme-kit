@@ -99,7 +99,7 @@ RoundedRectangle(cornerRadius: 12)
 Theme tokens are resolved lazily through SwiftUI's `ShapeStyle` protocol. Under the hood, `ThemeShapeStyle<Style>` holds a key path into the `Theme` and resolves the correct light/dark variant at render time using the environment's color scheme:
 
 ```swift
-struct ThemeShapeStyle<Style: ShapeStyle>: ShapeStyle, Sendable {
+struct ThemeShapeStyle<Style: ShapeStyle>: ShapeStyle, @unchecked Sendable {
     let keyPath: KeyPath<Theme, ThemeAdaptiveStyle<Style>>
 
     func resolve(in environment: EnvironmentValues) -> some ShapeStyle {
