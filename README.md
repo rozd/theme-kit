@@ -72,6 +72,8 @@ Only include the categories you need — the generated `Theme` struct will match
 
 Right-click your project in the Xcode navigator → **Generate Theme Files**.
 
+> When regenerating after editing `Theme+Defaults.swift`, pass `--skip-defaults` (in Xcode: add it under **Arguments** in the plugin dialog; from the command line: `swift package plugin generate-theme --skip-defaults`) so your design values aren't overwritten.
+
 <details>
 <summary>What gets generated?</summary>
 
