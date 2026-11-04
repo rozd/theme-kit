@@ -7,6 +7,7 @@ struct ThemeKitPlugin: CommandPlugin {
         var extractor = ArgumentExtractor(arguments)
         let configArg = extractor.extractOption(named: "config").first ?? "theme.json"
         let outputArg = extractor.extractOption(named: "output").first
+        let skipDefaults = extractor.extractFlag(named: "skip-defaults") > 0
 
         let selectedTargets = extractor.extractOption(named: "target")
         let target = selectedTargets.first.flatMap { name in
@@ -19,7 +20,7 @@ struct ThemeKitPlugin: CommandPlugin {
         let outputPath = outputArg ?? targetDir?.path() ?? rootDir.path()
 
         let tool = try context.tool(named: "ThemeKitGeneratorCLI")
-        try run(tool: tool.url, config: configPath, output: outputPath)
+        try run(tool: tool.url, config: configPath, output: outputPath, skipDefaults: skipDefaults)
     }
 }
 
@@ -31,6 +32,7 @@ extension ThemeKitPlugin: XcodeCommandPlugin {
         var extractor = ArgumentExtractor(arguments)
         let configArg = extractor.extractOption(named: "config").first ?? "theme.json"
         let outputArg = extractor.extractOption(named: "output").first
+        let skipDefaults = extractor.extractFlag(named: "skip-defaults") > 0
 
         let selectedTargets = extractor.extractOption(named: "target")
         let projectDir = context.xcodeProject.directoryURL
@@ -42,7 +44,7 @@ extension ThemeKitPlugin: XcodeCommandPlugin {
         let outputPath = outputArg ?? targetDir?.path() ?? projectDir.path()
 
         let tool = try context.tool(named: "ThemeKitGeneratorCLI")
-        try run(tool: tool.url, config: configPath, output: outputPath)
+        try run(tool: tool.url, config: configPath, output: outputPath, skipDefaults: skipDefaults)
     }
 }
 #endif
@@ -59,7 +61,7 @@ extension ThemeKitPlugin {
         return rootDir.appendingPathComponent(configArg).path()
     }
 
-    func run(tool: URL, config: String, output: String) throws {
+    func run(tool: URL, config: String, output: String, skipDefaults: Bool) throws {
         guard FileManager.default.fileExists(atPath: config) else {
             Diagnostics.error("""
                 Config file not found: \(config)
@@ -81,7 +83,12 @@ extension ThemeKitPlugin {
 
         let process = Process()
         process.executableURL = tool
-        process.arguments = ["--config", config, "--output", output]
+        var arguments = ["--config", config, "--output", output]
+        if skipDefaults {
+            // Preserve the hand-edited Theme+Defaults.swift on regeneration.
+            arguments.append("--skip-defaults")
+        }
+        process.arguments = arguments
         process.standardOutput = pipe
         process.standardError = pipe
 
